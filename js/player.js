@@ -1,0 +1,191 @@
+import { aabb, resolveSolid } from "./physics.js";
+
+const GRAVITY = 0.55;
+const WALK_SPEED = 2.4;
+const RUN_SPEED = 4.2;
+const WALK_JUMP = -10.2;
+const RUN_JUMP = -13.2;
+const AIR_CONTROL = 0.22;
+const MAX_HEARTS = 15;
+
+export class Player {
+  constructor(x, y) {
+    this.spawnX = x;
+    this.spawnY = y;
+    this.reset();
+  }
+
+  reset() {
+    this.x = this.spawnX;
+    this.y = this.spawnY;
+    this.w = 28;
+    this.h = 44;
+    this.vx = 0;
+    this.vy = 0;
+    this.facing = 1;
+    this.onGround = false;
+    this.wasRunning = false;
+    this.coyote = 0;
+    this.hearts = MAX_HEARTS;
+    this.maxHearts = MAX_HEARTS;
+    this.hasSword = false;
+    this.invuln = 0;
+    this.attack = null;
+    this.anim = "idle";
+    this.animTimer = 0;
+    this.alive = true;
+    this.holdStill = false;
+  }
+
+  get hurtbox() {
+    return { x: this.x + 4, y: this.y + 4, w: this.w - 8, h: this.h - 4 };
+  }
+
+  getHitbox() {
+    if (!this.attack) return null;
+    const reach = this.attack.type === "sword" ? 38 : this.attack.type === "kick" ? 30 : 24;
+    const height = this.attack.type === "kick" ? 18 : 22;
+    const yOff = this.attack.type === "kick" ? this.h - 22 : 12;
+    const x =
+      this.facing === 1 ? this.x + this.w - 4 : this.x - reach + 4;
+    return {
+      x,
+      y: this.y + yOff,
+      w: reach,
+      h: height,
+      damage: this.attack.damage,
+      type: this.attack.type,
+      hitIds: this.attack.hitIds,
+    };
+  }
+
+  startAttack(kind) {
+    if (this.attack || !this.alive) return;
+    if (kind === "punch") {
+      if (this.hasSword) {
+        this.attack = { type: "sword", timer: 16, damage: 2, hitIds: new Set() };
+        this.anim = "sword";
+      } else {
+        this.attack = { type: "punch", timer: 12, damage: 1, hitIds: new Set() };
+        this.anim = "punch";
+      }
+    } else if (kind === "kick") {
+      this.attack = { type: "kick", timer: 14, damage: 1, hitIds: new Set() };
+      this.anim = "kick";
+    }
+    this.animTimer = 0;
+  }
+
+  takeDamage(amount) {
+    if (this.invuln > 0 || !this.alive) return false;
+    this.hearts = Math.max(0, this.hearts - amount);
+    this.invuln = 70;
+    this.vy = -6;
+    this.vx = -this.facing * 3;
+    this.attack = null;
+    if (this.hearts <= 0) {
+      this.alive = false;
+      this.anim = "dead";
+    }
+    return true;
+  }
+
+  heal(amount) {
+    this.hearts = Math.min(this.maxHearts, this.hearts + amount);
+  }
+
+  update(input, solids, hazards) {
+    if (!this.alive) {
+      this.vy += GRAVITY;
+      this.y += this.vy;
+      return;
+    }
+
+    if (this.invuln > 0) this.invuln -= 1;
+
+    // Passives Laufen: ohne Input geht He-Man normal vorwärts.
+    // Aktiv: Stehen (↓), Rennen (Shift), optional Richtung drehen (←/→).
+    this.holdStill = input.down();
+    const wantRun = input.run() && !this.holdStill;
+    const turnLeft = input.left() && !input.right();
+    const turnRight = input.right() && !input.left();
+    if (!this.holdStill) {
+      if (turnLeft) this.facing = -1;
+      if (turnRight) this.facing = 1;
+    }
+
+    if (this.attack) {
+      this.attack.timer -= 1;
+      if (this.attack.timer <= 0) this.attack = null;
+    }
+
+    if (!this.attack) {
+      if (input.punch()) this.startAttack("punch");
+      else if (input.kick()) this.startAttack("kick");
+    }
+
+    const speed = wantRun ? RUN_SPEED : WALK_SPEED;
+    const canJump = this.onGround || this.coyote > 0;
+
+    if (this.onGround) {
+      this.coyote = 6;
+      if (this.holdStill) {
+        this.vx *= 0.55;
+        if (Math.abs(this.vx) < 0.15) this.vx = 0;
+        if (!this.attack) this.anim = "idle";
+        this.wasRunning = false;
+      } else {
+        this.vx = this.facing * speed;
+        this.wasRunning = wantRun;
+        if (!this.attack) this.anim = wantRun ? "run" : "walk";
+      }
+    } else {
+      if (this.coyote > 0) this.coyote -= 1;
+      if (!this.holdStill) {
+        // in der Luft weiter in Blickrichtung treiben
+        const target = this.facing * (wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED);
+        this.vx += Math.sign(target - this.vx) * AIR_CONTROL;
+        const maxAir = wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED;
+        this.vx = Math.max(-maxAir, Math.min(maxAir, this.vx));
+      }
+      if (!this.attack) this.anim = this.vy < 0 ? "jump" : "fall";
+    }
+
+    if (canJump && input.jump()) {
+      const runJump = this.wasRunning || wantRun;
+      this.vy = runJump ? RUN_JUMP : WALK_JUMP;
+      if (runJump) {
+        this.vx = this.facing * Math.max(Math.abs(this.vx), RUN_SPEED * 0.95);
+      } else if (!this.holdStill) {
+        this.vx = this.facing * Math.max(Math.abs(this.vx), WALK_SPEED);
+      }
+      this.onGround = false;
+      this.coyote = 0;
+      this.anim = "jump";
+    }
+
+    this.vy += GRAVITY;
+    if (this.vy > 14) this.vy = 14;
+
+    const hit = resolveSolid(this, solids);
+    this.onGround = hit.ground;
+    if (this.onGround) {
+      this.coyote = 6;
+      this.wasRunning = !this.holdStill && wantRun;
+    }
+
+    for (const hz of hazards) {
+      if (!aabb(this.hurtbox, hz)) continue;
+      this.takeDamage(hz.damage || 3);
+      if (hz.kind === "lava") {
+        // aus der Lava nach oben schubsen, leicht zur sicheren Seite
+        this.vy = -10;
+        this.y = Math.min(this.y, hz.y - this.h - 4);
+        const mid = hz.x + hz.w / 2;
+        this.vx = this.x + this.w / 2 < mid ? -3.5 : 3.5;
+      }
+    }
+
+    this.animTimer += 1;
+  }
+}
