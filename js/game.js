@@ -7,6 +7,7 @@ import { FlightSim } from "./flight.js";
 import { Renderer } from "./renderer.js";
 import { aabb } from "./physics.js";
 import { FullscreenUI } from "./fullscreen.js";
+import { DIFFICULTIES, loadDifficulty, saveDifficulty } from "./difficulty.js";
 
 const LS_STAGE2 = "heman-stage2";
 
@@ -27,6 +28,7 @@ export class Game {
     this.flight = null;
     this.carry = { hasSword: false, hearts: null };
     this.pendingStage = 1;
+    this.difficulty = loadDifficulty();
     try {
       if (new URLSearchParams(location.search).has("stage2")) this.unlockStage2();
     } catch (_) {
@@ -34,12 +36,13 @@ export class Game {
     }
     this.loadLevel(this.levelId, true);
     this._boundClick = (e) => {
-      if (e.target?.closest?.("[data-stage]")) return;
+      if (e.target?.closest?.("[data-stage]") || e.target?.closest?.("[data-diff]")) return;
       e.preventDefault();
       this.tryStart();
     };
     overlay.addEventListener("pointerup", this._boundClick);
     this._bindStageButtons();
+    this._bindDiffButtons();
     this._refreshTitleUi();
     this.last = 0;
     this.acc = 0;
@@ -81,6 +84,19 @@ export class Game {
     });
   }
 
+  _bindDiffButtons() {
+    document.querySelectorAll("[data-diff]").forEach((btn) => {
+      btn.addEventListener("pointerup", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.dataset.diff;
+        if (!DIFFICULTIES[id]) return;
+        this.difficulty = saveDifficulty(id);
+        this._refreshTitleUi();
+      });
+    });
+  }
+
   _refreshTitleUi() {
     const unlocked = this.stage2Unlocked();
     document.body.classList.toggle("stage2-unlocked", unlocked);
@@ -88,6 +104,13 @@ export class Game {
     if (b2) b2.hidden = !unlocked;
     document.body.classList.toggle("mode-flight", this.mode === "flight");
     document.body.classList.toggle("mode-run", this.mode !== "flight");
+    document.querySelectorAll("[data-diff]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.diff === this.difficulty.id);
+    });
+  }
+
+  diffOpts() {
+    return this.difficulty;
   }
 
   setMode(mode) {
@@ -97,21 +120,24 @@ export class Game {
 
   loadLevel(id, freshRun = false, opts = {}) {
     this.levelId = id;
+    const d = this.diffOpts();
     if (this.stage === 2) {
       this.level = createFlightLevel(id);
       this.setMode("flight");
-      this.ship = new Ship(this.level.spawn.x, this.level.spawn.y, this.level.corridor);
+      this.ship = new Ship(this.level.spawn.x, this.level.spawn.y, this.level.corridor, d);
       this.flight = new FlightSim(this.level);
       this.flight.reset(this.level);
-      this.player = new Player(this.level.spawn.x, this.level.spawn.y);
+      this.player = new Player(this.level.spawn.x, this.level.spawn.y, d);
       const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
       if (opts.fullHearts) {
+        this.ship.refillHearts();
+        this.player.refillHearts();
         this.ship.hasSword = keepSword;
         this.player.hasSword = keepSword;
       } else if (!freshRun && this.carry.hearts != null) {
-        this.ship.hearts = this.carry.hearts;
+        this.ship.hearts = Math.min(this.carry.hearts, this.ship.maxHearts);
         this.ship.hasSword = this.carry.hasSword;
-        this.player.hearts = this.carry.hearts;
+        this.player.hearts = Math.min(this.carry.hearts, this.player.maxHearts);
         this.player.hasSword = this.carry.hasSword;
       } else if (keepSword) {
         this.ship.hasSword = true;
@@ -122,12 +148,13 @@ export class Game {
       this.setMode("run");
       this.ship = null;
       this.flight = null;
-      this.player = new Player(this.level.spawn.x, this.level.spawn.y);
+      this.player = new Player(this.level.spawn.x, this.level.spawn.y, d);
       const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
       if (opts.fullHearts) {
+        this.player.refillHearts();
         this.player.hasSword = keepSword;
       } else if (!freshRun && this.carry.hearts != null) {
-        this.player.hearts = this.carry.hearts;
+        this.player.hearts = Math.min(this.carry.hearts, this.player.maxHearts);
         this.player.hasSword = this.carry.hasSword;
       } else if (keepSword) {
         this.player.hasSword = true;
@@ -142,6 +169,7 @@ export class Game {
     if (!arena) return;
     const hearts = this.ship ? this.ship.hearts : this.player.hearts;
     const sword = this.ship ? this.ship.hasSword : this.player.hasSword;
+    const d = this.diffOpts();
     this.level = {
       ...this.level,
       mode: "arena",
@@ -156,8 +184,8 @@ export class Game {
       groundY: arena.groundY,
     };
     this.setMode("arena");
-    this.player = new Player(arena.spawn.x, arena.spawn.y);
-    this.player.hearts = hearts;
+    this.player = new Player(arena.spawn.x, arena.spawn.y, d);
+    this.player.hearts = Math.min(hearts, this.player.maxHearts);
     this.player.hasSword = sword;
     this.ship = null;
     this.flight = null;
@@ -167,11 +195,12 @@ export class Game {
   updateTagline() {
     const el = document.querySelector(".tagline");
     const max = this.stage === 2 ? STAGE2_LEVELS : TOTAL_LEVELS;
+    const diff = this.difficulty.short || "ANF";
     if (el) {
       el.textContent =
         this.stage === 2
-          ? `Stufe 2 · Flug · Level ${this.levelId} / ${max}`
-          : `Stufe 1 · Run & Fight · Level ${this.levelId} / ${max}`;
+          ? `Stufe 2 · ${diff} · Level ${this.levelId}/${max}`
+          : `Stufe 1 · ${diff} · Level ${this.levelId}/${max}`;
     }
   }
 

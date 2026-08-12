@@ -2,14 +2,21 @@ const CRUISE = 3.1;
 const BOOST = 5.4;
 const BRAKE = 1.6;
 const VERT = 3.6;
-const MAX_HEARTS = 15;
 
 /** 1-Mann-Raumluftfahrzeug für Stufe 2 */
 export class Ship {
-  constructor(x, y, corridor) {
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {{ top: number, bottom: number }} corridor
+   * @param {{ hearts?: number, shipSpeed?: number }} [diff]
+   */
+  constructor(x, y, corridor, diff = {}) {
     this.spawnX = x;
     this.spawnY = y;
     this.corridor = corridor || { top: 48, bottom: 420 };
+    this.diffHearts = diff.hearts ?? 15;
+    this.speedMul = diff.shipSpeed ?? diff.speed ?? 1;
     this.reset();
   }
 
@@ -18,16 +25,27 @@ export class Ship {
     this.y = this.spawnY;
     this.w = 56;
     this.h = 28;
-    this.vx = CRUISE;
+    this.vx = CRUISE * this.speedMul;
     this.vy = 0;
-    this.hearts = MAX_HEARTS;
-    this.maxHearts = MAX_HEARTS;
+    this.maxHearts = this.diffHearts;
+    this.hearts = this.diffHearts;
     this.hasSword = false;
     this.invuln = 0;
     this.shootCd = 0;
     this.animTimer = 0;
     this.alive = true;
     this.boosting = false;
+  }
+
+  applyDifficulty(diff) {
+    this.diffHearts = diff.hearts ?? 15;
+    this.speedMul = diff.shipSpeed ?? diff.speed ?? 1;
+    this.maxHearts = this.diffHearts;
+    this.hearts = Math.min(this.hearts, this.maxHearts);
+  }
+
+  refillHearts() {
+    this.hearts = this.maxHearts;
   }
 
   get hurtbox() {
@@ -58,19 +76,24 @@ export class Ship {
     if (this.invuln > 0) this.invuln -= 1;
     if (this.shootCd > 0) this.shootCd -= 1;
 
+    const cruise = CRUISE * this.speedMul;
+    const boost = BOOST * this.speedMul;
+    const brake = BRAKE * this.speedMul;
+    const vert = VERT * Math.min(1.25, 0.85 + this.speedMul * 0.15);
+
     this.boosting = false;
     if (input.brake()) {
-      this.vx += (BRAKE - this.vx) * 0.2;
+      this.vx += (brake - this.vx) * 0.2;
     } else if (input.right() || input.run()) {
-      this.vx += (BOOST - this.vx) * 0.18;
+      this.vx += (boost - this.vx) * 0.18;
       this.boosting = true;
     } else {
-      this.vx += (CRUISE - this.vx) * 0.12;
+      this.vx += (cruise - this.vx) * 0.12;
     }
 
     let vy = 0;
-    if (input.up()) vy -= VERT;
-    if (input.sink()) vy += VERT;
+    if (input.up()) vy -= vert;
+    if (input.sink()) vy += vert;
     this.vy = vy;
 
     this.x += this.vx;
@@ -82,13 +105,13 @@ export class Ship {
     if (this.y > bot) this.y = bot;
 
     if ((input.punch() || input.shoot()) && this.shootCd <= 0) {
-      this.shootCd = 12;
+      this.shootCd = Math.max(8, Math.round(12 / Math.min(1.3, this.speedMul)));
       flight.bullets.push({
         x: this.x + this.w - 4,
         y: this.y + this.h / 2 - 3,
         w: 16,
         h: 6,
-        vx: 11,
+        vx: 11 * Math.min(1.25, this.speedMul),
         vy: 0,
         damage: 1,
         life: 70,

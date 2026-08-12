@@ -141,12 +141,44 @@ body {
   font-size: 8px;
 }
 
+.diff-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.diff-btn {
+  min-width: 96px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 2px solid var(--muted);
+  background: rgba(12, 16, 32, 0.9);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 7px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.diff-btn span {
+  color: var(--danger);
+  font-size: 8px;
+}
+
+.diff-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold-dim);
+}
+
 .stage-pick {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .stage-btn {

@@ -6,12 +6,18 @@ const RUN_SPEED = 4.4;
 const WALK_JUMP = -11.2;
 const RUN_JUMP = -14.2;
 const AIR_CONTROL = 0.24;
-const MAX_HEARTS = 15;
 
 export class Player {
-  constructor(x, y) {
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {{ hearts?: number, speed?: number }} [diff]
+   */
+  constructor(x, y, diff = {}) {
     this.spawnX = x;
     this.spawnY = y;
+    this.diffHearts = diff.hearts ?? 15;
+    this.speedMul = diff.speed ?? 1;
     this.reset();
   }
 
@@ -26,8 +32,8 @@ export class Player {
     this.onGround = false;
     this.wasRunning = false;
     this.coyote = 0;
-    this.hearts = MAX_HEARTS;
-    this.maxHearts = MAX_HEARTS;
+    this.maxHearts = this.diffHearts;
+    this.hearts = this.diffHearts;
     this.hasSword = false;
     this.invuln = 0;
     this.attack = null;
@@ -35,6 +41,17 @@ export class Player {
     this.animTimer = 0;
     this.alive = true;
     this.holdStill = false;
+  }
+
+  applyDifficulty(diff) {
+    this.diffHearts = diff.hearts ?? 15;
+    this.speedMul = diff.speed ?? 1;
+    this.maxHearts = this.diffHearts;
+    this.hearts = Math.min(this.hearts, this.maxHearts);
+  }
+
+  refillHearts() {
+    this.hearts = this.maxHearts;
   }
 
   get hurtbox() {
@@ -98,7 +115,7 @@ export class Player {
    * @param {object} input
    * @param {object[]} solids
    * @param {object[]} hazards
-   * @param {{ bossSlow?: boolean }} [opts] Endkampf: langsamer laufen
+   * @param {{ bossSlow?: boolean }} [opts]
    */
   update(input, solids, hazards, opts = {}) {
     if (!this.alive) {
@@ -109,8 +126,6 @@ export class Player {
 
     if (this.invuln > 0) this.invuln -= 1;
 
-    // Passiv: normales Laufen. Vorwärts-Taste (in Blickrichtung) = rennen.
-    // Gegenrichtung = umdrehen. STOP = stehen. Shift/REN bleibt optional.
     this.holdStill = input.down();
     if (!this.holdStill) {
       if (this.facing === 1 && input.left() && !input.right()) this.facing = -1;
@@ -131,9 +146,9 @@ export class Player {
       else if (input.kick()) this.startAttack("kick");
     }
 
-    // Endkampf: spürbar langsamer
-    const slow = opts.bossSlow ? 0.62 : 1;
-    const speed = (wantRun ? RUN_SPEED : WALK_SPEED) * slow;
+    const walk = WALK_SPEED * this.speedMul;
+    const run = RUN_SPEED * this.speedMul;
+    const speed = (wantRun ? run : walk) * (opts.bossSlow ? 0.62 : 1);
     const canJump = this.onGround || this.coyote > 0;
 
     if (this.onGround) {
@@ -151,7 +166,7 @@ export class Player {
     } else {
       if (this.coyote > 0) this.coyote -= 1;
       if (!this.holdStill) {
-        const airSpeed = (wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED) * slow;
+        const airSpeed = (wantRun || this.wasRunning ? run : walk) * (opts.bossSlow ? 0.62 : 1);
         const target = this.facing * airSpeed;
         this.vx += Math.sign(target - this.vx) * AIR_CONTROL;
         this.vx = Math.max(-airSpeed, Math.min(airSpeed, this.vx));
@@ -163,9 +178,9 @@ export class Player {
       const runJump = this.wasRunning || wantRun;
       this.vy = (runJump ? RUN_JUMP : WALK_JUMP) * (opts.bossSlow ? 0.92 : 1);
       if (runJump) {
-        this.vx = this.facing * Math.max(Math.abs(this.vx), RUN_SPEED * 0.95 * slow);
+        this.vx = this.facing * Math.max(Math.abs(this.vx), run * 0.95 * (opts.bossSlow ? 0.62 : 1));
       } else if (!this.holdStill) {
-        this.vx = this.facing * Math.max(Math.abs(this.vx), WALK_SPEED * slow);
+        this.vx = this.facing * Math.max(Math.abs(this.vx), walk * (opts.bossSlow ? 0.62 : 1));
       }
       this.onGround = false;
       this.coyote = 0;

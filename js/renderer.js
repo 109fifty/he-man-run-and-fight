@@ -549,13 +549,15 @@ export class Renderer {
     if (!actor) return;
 
     drawPixelRect(ctx, 0, 0, canvas.width, 40, "rgba(10,14,28,0.72)");
+    const diffShort = game.difficulty?.short || "ANF";
     ctx.fillStyle = "#f0c14b";
     ctx.font = "9px 'Press Start 2P'";
     ctx.fillText(`S${stage} L${level.id}/12`, 12, 24);
     ctx.fillStyle = "#9aa6c3";
     ctx.font = "7px 'Press Start 2P'";
-    const name = level.name.length > 16 ? level.name.slice(0, 14) + "…" : level.name;
-    ctx.fillText(name, 110, 24);
+    ctx.fillText(diffShort, 108, 24);
+    const name = level.name.length > 14 ? level.name.slice(0, 12) + "…" : level.name;
+    ctx.fillText(name, 148, 24);
 
     const startX = canvas.width - 16 - actor.maxHearts * 12;
     for (let i = 0; i < actor.maxHearts; i++) {
