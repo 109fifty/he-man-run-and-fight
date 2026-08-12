@@ -4,14 +4,13 @@ function drawPixelRect(ctx, x, y, w, h, color) {
 }
 
 const THEMES = {
-  outskirts: { top: "#1a2748", mid: "#3a5c9a", bot: "#6a4a2a", mount: "#2a3d66", grass: "#3d8b3d" },
-  jungle: { top: "#0f2a1c", mid: "#1f5a38", bot: "#3a4a20", mount: "#164a30", grass: "#2ecc71" },
-  cave: { top: "#12081c", mid: "#2a1848", bot: "#3a2030", mount: "#1a1028", grass: "#5a3a6a" },
-  ice: { top: "#0e2240", mid: "#4a7aaa", bot: "#c8d8e8", mount: "#6a90b0", grass: "#dfefff" },
-  desert: { top: "#3a2810", mid: "#c4922a", bot: "#e8c878", mount: "#a07030", grass: "#d4a84b" },
-  dark: { top: "#0a0610", mid: "#2a1030", bot: "#1a1020", mount: "#180818", grass: "#4a2040" },
-  castle: { top: "#141828", mid: "#3a4568", bot: "#5a4a3a", mount: "#222838", grass: "#6a7a55" },
-  finale: { top: "#1a0510", mid: "#5a1028", bot: "#2a1810", mount: "#3a0a18", grass: "#8b2222" },
+  meadow: { top: "#87b7e8", mid: "#a8d48a", bot: "#6aaa3a", mount: "#7a9a50", grass: "#5dba3a", stone: "#8a9a6a" },
+  forest: { top: "#0f2a1c", mid: "#1f5a38", bot: "#3a4a20", mount: "#164a30", grass: "#2ecc71", stone: "#4a6a40" },
+  water: { top: "#0a3048", mid: "#1a6a9a", bot: "#2a8aba", mount: "#1a4a68", grass: "#3a9aaa", stone: "#4a7a8a" },
+  desert: { top: "#3a2810", mid: "#c4922a", bot: "#e8c878", mount: "#a07030", grass: "#d4a84b", stone: "#c4a060" },
+  castle: { top: "#141828", mid: "#3a4568", bot: "#5a4a3a", mount: "#222838", grass: "#6a7a55", stone: "#6a7080" },
+  spaceship: { top: "#040812", mid: "#1a2848", bot: "#0a1830", mount: "#122040", grass: "#3a8ada", stone: "#5a6a8a" },
+  lava: { top: "#1a0510", mid: "#5a1028", bot: "#3a1810", mount: "#3a0a18", grass: "#8b2222", stone: "#6a3a2a" },
 };
 
 function drawHeMan(ctx, p) {
@@ -20,7 +19,9 @@ function drawHeMan(ctx, p) {
 
   ctx.save();
   ctx.translate(Math.round(x + w / 2), Math.round(y));
-  ctx.scale(facing, 1);
+  // Basis-Sprite ~44px hoch → auf Spielerhöhe skalieren
+  const s = (p.h || 64) / 44;
+  ctx.scale(facing * s, s);
 
   const bob =
     anim === "walk" || anim === "run"
@@ -220,7 +221,7 @@ export class Renderer {
   draw(game) {
     const { ctx, canvas } = this;
     const { player, level, state } = game;
-    const theme = THEMES[level.theme] || THEMES.outskirts;
+    const theme = THEMES[level.theme] || THEMES.meadow;
     this.time += 1;
     this.follow(player, level);
 
@@ -247,35 +248,55 @@ export class Renderer {
       ctx.fill();
     }
 
-    ctx.fillStyle = level.theme === "finale" ? "#3a1020" : "#1c2438";
+    ctx.fillStyle = level.theme === "lava" ? "#3a1020" : level.theme === "spaceship" ? "#0a1528" : "#1c2438";
     ctx.fillRect(level.goal.x - 40, level.goal.y - 40, 100, 140);
     ctx.fillRect(level.goal.x - 50, level.goal.y - 70, 24, 40);
     ctx.fillRect(level.goal.x + 60, level.goal.y - 70, 24, 40);
 
     for (const hz of level.hazards) {
-      if (hz.kind !== "lava") continue;
       const pulse = 0.5 + Math.sin(this.time * 0.15 + hz.x) * 0.15;
-      ctx.fillStyle = `rgba(255, 70, 20, ${0.85})`;
-      ctx.fillRect(hz.x, hz.y, hz.w, hz.h);
-      ctx.fillStyle = `rgba(255, 200, 40, ${pulse})`;
-      for (let i = 0; i < hz.w; i += 16) {
-        const wave = Math.sin(this.time * 0.2 + i * 0.1) * 4;
-        ctx.fillRect(hz.x + i, hz.y + wave, 10, 8);
+      if (hz.kind === "lava") {
+        ctx.fillStyle = `rgba(255, 70, 20, ${0.85})`;
+        ctx.fillRect(hz.x, hz.y, hz.w, hz.h);
+        ctx.fillStyle = `rgba(255, 200, 40, ${pulse})`;
+        for (let i = 0; i < hz.w; i += 16) {
+          const wave = Math.sin(this.time * 0.2 + i * 0.1) * 4;
+          ctx.fillRect(hz.x + i, hz.y + wave, 10, 8);
+        }
+      } else if (hz.kind === "water") {
+        ctx.fillStyle = `rgba(40, 120, 200, ${0.75})`;
+        ctx.fillRect(hz.x, hz.y, hz.w, hz.h);
+        ctx.fillStyle = `rgba(120, 200, 255, ${pulse})`;
+        for (let i = 0; i < hz.w; i += 18) {
+          const wave = Math.sin(this.time * 0.18 + i * 0.12) * 3;
+          ctx.fillRect(hz.x + i, hz.y + wave, 12, 6);
+        }
       }
     }
 
     for (const s of level.solids) {
       if (s.type === "ground") {
-        drawPixelRect(ctx, s.x, s.y, s.w, s.h, "#5a3a1e");
+        const dirt =
+          level.theme === "spaceship"
+            ? "#2a3548"
+            : level.theme === "desert"
+              ? "#a88440"
+              : level.theme === "water"
+                ? "#3a5a48"
+                : "#5a3a1e";
+        drawPixelRect(ctx, s.x, s.y, s.w, s.h, dirt);
         drawPixelRect(ctx, s.x, s.y, s.w, 8, theme.grass);
         for (let i = 0; i < s.w; i += 32) {
-          drawPixelRect(ctx, s.x + i, s.y + 10, 28, 4, "#6b4524");
+          drawPixelRect(ctx, s.x + i, s.y + 10, 28, 4, dirt === "#2a3548" ? "#3a4a68" : "#6b4524");
         }
       } else {
-        const stone = level.theme === "ice" ? "#a8c4d8" : level.theme === "cave" ? "#5a4a6a" : "#7a6a55";
+        const stone = theme.stone || "#7a6a55";
         drawPixelRect(ctx, s.x, s.y, s.w, s.h, stone);
         drawPixelRect(ctx, s.x, s.y, s.w, 4, "#a09078");
         drawPixelRect(ctx, s.x, s.y + s.h - 4, s.w, 4, "#4a4035");
+        if (level.theme === "spaceship") {
+          drawPixelRect(ctx, s.x + 4, s.y + 6, 6, 4, "#6ad");
+        }
       }
     }
 

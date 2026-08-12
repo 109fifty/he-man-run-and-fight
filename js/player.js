@@ -1,11 +1,11 @@
 import { aabb, resolveSolid } from "./physics.js";
 
-const GRAVITY = 0.55;
-const WALK_SPEED = 2.4;
-const RUN_SPEED = 4.2;
-const WALK_JUMP = -10.2;
-const RUN_JUMP = -13.2;
-const AIR_CONTROL = 0.22;
+const GRAVITY = 0.58;
+const WALK_SPEED = 2.5;
+const RUN_SPEED = 4.4;
+const WALK_JUMP = -11.2;
+const RUN_JUMP = -14.2;
+const AIR_CONTROL = 0.24;
 const MAX_HEARTS = 15;
 
 export class Player {
@@ -18,8 +18,8 @@ export class Player {
   reset() {
     this.x = this.spawnX;
     this.y = this.spawnY;
-    this.w = 28;
-    this.h = 44;
+    this.w = 40;
+    this.h = 64;
     this.vx = 0;
     this.vy = 0;
     this.facing = 1;
@@ -43,9 +43,9 @@ export class Player {
 
   getHitbox() {
     if (!this.attack) return null;
-    const reach = this.attack.type === "sword" ? 38 : this.attack.type === "kick" ? 30 : 24;
-    const height = this.attack.type === "kick" ? 18 : 22;
-    const yOff = this.attack.type === "kick" ? this.h - 22 : 12;
+    const reach = this.attack.type === "sword" ? 48 : this.attack.type === "kick" ? 38 : 30;
+    const height = this.attack.type === "kick" ? 24 : 28;
+    const yOff = this.attack.type === "kick" ? this.h - 30 : 16;
     const x =
       this.facing === 1 ? this.x + this.w - 4 : this.x - reach + 4;
     return {
@@ -178,9 +178,8 @@ export class Player {
     for (const hz of hazards) {
       if (!aabb(this.hurtbox, hz)) continue;
       this.takeDamage(hz.damage || 3);
-      if (hz.kind === "lava") {
-        // aus der Lava nach oben schubsen, leicht zur sicheren Seite
-        this.vy = -10;
+      if (hz.kind === "lava" || hz.kind === "water") {
+        this.vy = hz.kind === "lava" ? -10 : -8;
         this.y = Math.min(this.y, hz.y - this.h - 4);
         const mid = hz.x + hz.w / 2;
         this.vx = this.x + this.w / 2 < mid ? -3.5 : 3.5;

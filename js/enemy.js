@@ -2,15 +2,16 @@ import { aabb, resolveSolid } from "./physics.js";
 
 const GRAVITY = 0.55;
 
-const KIND = {
-  scout: { w: 24, h: 32, speed: 1.4 },
-  grunt: { w: 30, h: 40, speed: 1.0 },
-  brute: { w: 36, h: 48, speed: 0.7 },
-  beast: { w: 48, h: 56, speed: 1.35 }, // Boss L3
-  trapjaw: { w: 46, h: 52, speed: 1.5 }, // Boss L6
-  triklops: { w: 50, h: 58, speed: 1.2 }, // Boss L9
-  skeletor: { w: 40, h: 56, speed: 1.1 }, // Boss L12
-  heroSkeletor: { w: 40, h: 56, speed: 0 },
+/** Größere Figuren (≈1.45×) */
+export const KIND = {
+  scout: { w: 34, h: 46, speed: 1.35 },
+  grunt: { w: 42, h: 58, speed: 1.0 },
+  brute: { w: 52, h: 70, speed: 0.75 },
+  beast: { w: 68, h: 80, speed: 1.3 },
+  trapjaw: { w: 64, h: 74, speed: 1.45 },
+  triklops: { w: 70, h: 82, speed: 1.15 },
+  skeletor: { w: 56, h: 80, speed: 1.15 },
+  heroSkeletor: { w: 56, h: 80, speed: 0 },
 };
 
 export class Enemy {
@@ -43,7 +44,7 @@ export class Enemy {
   }
 
   get hurtbox() {
-    return { x: this.x + 2, y: this.y + 2, w: this.w - 4, h: this.h - 2 };
+    return { x: this.x + 3, y: this.y + 3, w: this.w - 6, h: this.h - 3 };
   }
 
   takeHit(damage) {
@@ -68,7 +69,6 @@ export class Enemy {
   }
 
   speed() {
-    // Bosses etwas schneller, wenn unter 50% HP
     if (this.isBoss && this.hp <= this.maxHp * 0.5) return this.baseSpeed * 1.25;
     return this.baseSpeed;
   }

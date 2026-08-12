@@ -52,17 +52,17 @@ He-Man läuft von allein. Buttons: STOP, REN, Drehen, Jump, Faust, Tritt, Start,
 
 ## Kampagne (12 Level)
 
-1. Eternia Outskirts  
-2. Vine Jungle  
-3. Whispering Woods — **Endkampf: Beast Man**  
-4. Crystal Caves  
-5. Ice Peaks  
-6. Desert of Lost Kings — **Endkampf: Trap Jaw**  
-7. Snake Mountain Foothills  
-8. Obsidian Bridge  
-9. Grayskull Approach — **Endkampf: Tri-Klops**  
-10. Inner Sanctum  
-11. Throne Corridor  
-12. Snake Mountain Throne — **Endkampf: Skeletor → wird Hero**  
+1. **Wiese** — Sunny Meadow (leicht)  
+2. **Forest** — Green Forest  
+3. **Forest** — Deep Forest · Boss Beast Man  
+4. **Wasser** — River Crossing  
+5. **Wüste** — Sand Dunes  
+6. **Wüste** — Lost Kings · Boss Trap Jaw  
+7. **Burg** — Castle Ramparts  
+8. **Spaceship** — Starship Hangar  
+9. **Spaceship** — Orbital Keep · Boss Tri-Klops  
+10. **Spaceship** — Void Corridors  
+11. **Wasser** — Storm Coast  
+12. **Lava** — Snake Mountain · Boss Skeletor → Hero  
 
-Tor öffnet erst nach Boss-Sieg. Mechanik: passives Laufen, Vorwärts = rennen, Kopf-Stomp, Faust/Schwert/Tritt.
+Schwierigkeit steigt mit jedem Level. Lava nur in Level 12. Figuren vergrößert.
