@@ -1,9 +1,14 @@
 import { Input } from "./input.js";
 import { Player } from "./player.js";
-import { createLevel, TOTAL_LEVELS } from "./level.js";
+import { createLevel, TOTAL_LEVELS, LEVELS_PER_STAGE } from "./level.js";
+import { createFlightLevel, STAGE2_LEVELS } from "./stage2.js";
+import { Ship } from "./ship.js";
+import { FlightSim } from "./flight.js";
 import { Renderer } from "./renderer.js";
 import { aabb } from "./physics.js";
 import { FullscreenUI } from "./fullscreen.js";
+
+const LS_STAGE2 = "heman-stage2";
 
 export class Game {
   constructor(canvas, overlay) {
@@ -14,15 +19,28 @@ export class Game {
     this.input = new Input();
     this.renderer = new Renderer(canvas);
     this.fs = new FullscreenUI();
-    this.state = "title"; // title | playing | dead | levelclear | campaign
+    this.state = "title"; // title | playing | dead | levelclear | campaign | stageclear
+    this.stage = 1;
     this.levelId = 1;
+    this.mode = "run"; // run | flight | arena
+    this.ship = null;
+    this.flight = null;
     this.carry = { hasSword: false, hearts: null };
+    this.pendingStage = 1;
+    try {
+      if (new URLSearchParams(location.search).has("stage2")) this.unlockStage2();
+    } catch (_) {
+      /* ignore */
+    }
     this.loadLevel(this.levelId, true);
     this._boundClick = (e) => {
+      if (e.target?.closest?.("[data-stage]")) return;
       e.preventDefault();
       this.tryStart();
     };
     overlay.addEventListener("pointerup", this._boundClick);
+    this._bindStageButtons();
+    this._refreshTitleUi();
     this.last = 0;
     this.acc = 0;
     this.step = 1000 / 60;
@@ -31,26 +49,130 @@ export class Game {
     requestAnimationFrame((t) => this.loop(t));
   }
 
+  stage2Unlocked() {
+    try {
+      return localStorage.getItem(LS_STAGE2) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  unlockStage2() {
+    try {
+      localStorage.setItem(LS_STAGE2, "1");
+    } catch (_) {
+      /* ignore */
+    }
+    this._refreshTitleUi();
+  }
+
+  _bindStageButtons() {
+    document.querySelectorAll("[data-stage]").forEach((btn) => {
+      btn.addEventListener("pointerup", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const s = Number(btn.dataset.stage) || 1;
+        if (s === 2 && !this.stage2Unlocked()) return;
+        this.pendingStage = s;
+        if (this.state === "title" || this.state === "campaign" || this.state === "stageclear") {
+          this.startStage(s);
+        }
+      });
+    });
+  }
+
+  _refreshTitleUi() {
+    const unlocked = this.stage2Unlocked();
+    document.body.classList.toggle("stage2-unlocked", unlocked);
+    const b2 = document.getElementById("btn-stage2");
+    if (b2) b2.hidden = !unlocked;
+    document.body.classList.toggle("mode-flight", this.mode === "flight");
+    document.body.classList.toggle("mode-run", this.mode !== "flight");
+  }
+
+  setMode(mode) {
+    this.mode = mode;
+    this._refreshTitleUi();
+  }
+
   loadLevel(id, freshRun = false, opts = {}) {
     this.levelId = id;
-    this.level = createLevel(id);
-    this.player = new Player(this.level.spawn.x, this.level.spawn.y);
-    const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
-    if (opts.fullHearts) {
-      this.player.hasSword = keepSword;
-    } else if (!freshRun && this.carry.hearts != null) {
-      this.player.hearts = this.carry.hearts;
-      this.player.hasSword = this.carry.hasSword;
-    } else if (keepSword) {
-      this.player.hasSword = true;
+    if (this.stage === 2) {
+      this.level = createFlightLevel(id);
+      this.setMode("flight");
+      this.ship = new Ship(this.level.spawn.x, this.level.spawn.y, this.level.corridor);
+      this.flight = new FlightSim(this.level);
+      this.flight.reset(this.level);
+      this.player = new Player(this.level.spawn.x, this.level.spawn.y);
+      const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
+      if (opts.fullHearts) {
+        this.ship.hasSword = keepSword;
+        this.player.hasSword = keepSword;
+      } else if (!freshRun && this.carry.hearts != null) {
+        this.ship.hearts = this.carry.hearts;
+        this.ship.hasSword = this.carry.hasSword;
+        this.player.hearts = this.carry.hearts;
+        this.player.hasSword = this.carry.hasSword;
+      } else if (keepSword) {
+        this.ship.hasSword = true;
+        this.player.hasSword = true;
+      }
+    } else {
+      this.level = createLevel(id);
+      this.setMode("run");
+      this.ship = null;
+      this.flight = null;
+      this.player = new Player(this.level.spawn.x, this.level.spawn.y);
+      const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
+      if (opts.fullHearts) {
+        this.player.hasSword = keepSword;
+      } else if (!freshRun && this.carry.hearts != null) {
+        this.player.hearts = this.carry.hearts;
+        this.player.hasSword = this.carry.hasSword;
+      } else if (keepSword) {
+        this.player.hasSword = true;
+      }
     }
     this.renderer.camX = 0;
     this.updateTagline();
   }
 
+  enterArena() {
+    const arena = this.level.arena;
+    if (!arena) return;
+    const hearts = this.ship ? this.ship.hearts : this.player.hearts;
+    const sword = this.ship ? this.ship.hasSword : this.player.hasSword;
+    this.level = {
+      ...this.level,
+      mode: "arena",
+      solids: arena.solids,
+      hazards: arena.hazards,
+      pickups: arena.pickups,
+      enemies: arena.enemies,
+      goal: arena.goal,
+      spawn: arena.spawn,
+      width: arena.width,
+      height: arena.height,
+      groundY: arena.groundY,
+    };
+    this.setMode("arena");
+    this.player = new Player(arena.spawn.x, arena.spawn.y);
+    this.player.hearts = hearts;
+    this.player.hasSword = sword;
+    this.ship = null;
+    this.flight = null;
+    this.renderer.camX = 0;
+  }
+
   updateTagline() {
     const el = document.querySelector(".tagline");
-    if (el) el.textContent = `Run & Fight · Level ${this.levelId} / ${TOTAL_LEVELS}`;
+    const max = this.stage === 2 ? STAGE2_LEVELS : TOTAL_LEVELS;
+    if (el) {
+      el.textContent =
+        this.stage === 2
+          ? `Stufe 2 · Flug · Level ${this.levelId} / ${max}`
+          : `Stufe 1 · Run & Fight · Level ${this.levelId} / ${max}`;
+    }
   }
 
   showOverlay(title, text) {
@@ -63,18 +185,24 @@ export class Game {
     this.overlay.classList.add("hidden");
   }
 
+  async startStage(stage) {
+    this.stage = stage;
+    this.levelId = 1;
+    this.carry = { hasSword: false, hearts: null };
+    this.loadLevel(1, true);
+    this.state = "playing";
+    this.hideOverlay();
+    await this.fs.enter();
+  }
+
   async tryStart() {
     if (this.state === "title") {
-      this.levelId = 1;
-      this.carry = { hasSword: false, hearts: null };
-      this.loadLevel(1, true);
-      this.state = "playing";
-      this.hideOverlay();
-      await this.fs.enter();
+      await this.startStage(this.pendingStage || 1);
       return;
     }
     if (this.state === "dead") {
-      const sword = this.player.hasSword || this.carry.hasSword;
+      const sword =
+        this.player?.hasSword || this.ship?.hasSword || this.carry.hasSword;
       this.carry.hasSword = sword;
       this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
       this.state = "playing";
@@ -84,9 +212,10 @@ export class Game {
     }
     if (this.state === "levelclear") {
       const next = this.levelId + 1;
+      const actor = this.mode === "flight" ? this.ship : this.player;
       this.carry = {
-        hasSword: this.player.hasSword,
-        hearts: this.player.hearts,
+        hasSword: actor?.hasSword || false,
+        hearts: actor?.hearts ?? null,
       };
       this.loadLevel(next, false);
       this.state = "playing";
@@ -94,13 +223,14 @@ export class Game {
       await this.fs.enter();
       return;
     }
+    if (this.state === "stageclear") {
+      this.unlockStage2();
+      await this.startStage(2);
+      return;
+    }
     if (this.state === "campaign") {
-      this.levelId = 1;
-      this.carry = { hasSword: false, hearts: null };
-      this.loadLevel(1, true);
-      this.state = "playing";
-      this.hideOverlay();
-      await this.fs.enter();
+      this.pendingStage = 1;
+      await this.startStage(1);
     }
   }
 
@@ -120,7 +250,6 @@ export class Game {
     );
   }
 
-  /** Boss-Level: Tor erst nach Sieg, und nur per Sprung (nicht durchlaufen) */
   canEnterGoal() {
     if (this.level.requireBoss) {
       if (!this.bossCleared()) return false;
@@ -129,35 +258,66 @@ export class Game {
     return true;
   }
 
-  update() {
-    if (this.input.restart()) {
-      if (this.state === "campaign" || this.state === "title") {
-        this.levelId = 1;
-        this.carry = { hasSword: false, hearts: null };
-        this.loadLevel(1, true);
+  clearLevel() {
+    const max = this.stage === 2 ? STAGE2_LEVELS : LEVELS_PER_STAGE;
+    if (this.levelId >= max) {
+      if (this.stage === 1) {
+        this.unlockStage2();
+        this.state = "stageclear";
+        this.showOverlay(
+          "Stufe 1 geschafft!",
+          "Skeletor fand das Licht. Tippe START für Stufe 2: Flugkampf im Raumluftfahrzeug!"
+        );
       } else {
-        const sword = this.player?.hasSword || this.carry.hasSword;
-        this.carry.hasSword = sword;
-        this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
+        this.state = "campaign";
+        this.showOverlay(
+          "Eternia ist frei!",
+          "Stufe 1 + Stufe 2 komplett — alle Welten und Endkämpfe besiegt. Tippe START für Stufe 1."
+        );
       }
-      this.state = "playing";
-      this.hideOverlay();
-      this.fs.enter();
+    } else {
+      const bossNote = this.level.bossLevel
+        ? ` Endkampf gegen ${this.level.bossTitle || "den Boss"} gewonnen!`
+        : "";
+      this.state = "levelclear";
+      this.showOverlay(
+        `Stufe ${this.stage} · Level ${this.levelId} geschafft!`,
+        `${this.level.name}.${bossNote} Weiter zu Level ${this.levelId + 1}. Tippe START.`
+      );
+    }
+  }
+
+  updateFlight() {
+    const { ship, flight, level } = this;
+    ship.update(this.input, flight);
+    flight.update(ship);
+
+    if (level.bossTrigger && ship.x >= level.bossTrigger) {
+      this.enterArena();
       return;
     }
 
-    if (this.state !== "playing") {
-      if (this.input.start()) this.tryStart();
+    if (!level.bossLevel && aabb(ship.hurtbox, level.goal)) {
+      this.clearLevel();
       return;
     }
 
+    if (!ship.alive && this.state === "playing") {
+      this.state = "dead";
+      this.showOverlay(
+        "Schiff abgeschossen…",
+        `Stufe 2 · Level ${this.levelId}: ${level.name}. Tippe START oder R.`
+      );
+    }
+  }
+
+  updateGround() {
     const { player, level } = this;
     const bossSlow = !!(level.requireBoss && this.activeBoss());
     player.update(this.input, level.solids, level.hazards, { bossSlow });
 
     for (const e of level.enemies) e.update(level.solids, player);
 
-    // Spieler-Angriff
     const hitbox = player.getHitbox();
     if (hitbox && player.attack) {
       for (const e of level.enemies) {
@@ -170,7 +330,6 @@ export class Game {
       }
     }
 
-    // Gegner-Angriffe
     for (const e of level.enemies) {
       if (!e.alive || e.redeemed) continue;
       const eh = e.getHitbox();
@@ -181,7 +340,6 @@ export class Game {
       }
     }
 
-    // Stomp / Kontakt
     for (const e of level.enemies) {
       if (!e.alive || e.redeemed) continue;
       if (!aabb(player.hurtbox, e.hurtbox)) continue;
@@ -197,7 +355,6 @@ export class Game {
         player.onGround = false;
         player.invuln = Math.max(player.invuln, 10);
       } else if (player.invuln <= 0 && !e.attack) {
-        // Kontakt-Schaden nur wenn kein aktiver Schwung (sonst Doppel-Hit)
         player.takeDamage(1);
       }
     }
@@ -211,22 +368,7 @@ export class Game {
     }
 
     if (this.canEnterGoal() && aabb(player.hurtbox, level.goal)) {
-      if (this.levelId >= TOTAL_LEVELS) {
-        this.state = "campaign";
-        this.showOverlay(
-          "Skeletor ist ein Hero!",
-          "Durch deine Stärke fand er das Licht. Alle 12 Level + Endkämpfe geschafft. Tippe START."
-        );
-      } else {
-        const bossNote = level.bossLevel
-          ? ` Endkampf gegen ${level.bossTitle || "den Boss"} gewonnen!`
-          : "";
-        this.state = "levelclear";
-        this.showOverlay(
-          `Level ${this.levelId} geschafft!`,
-          `${level.name}.${bossNote} Weiter zu Level ${this.levelId + 1}. Tippe START.`
-        );
-      }
+      this.clearLevel();
     }
 
     if (player.y > level.height + 80) {
@@ -238,9 +380,34 @@ export class Game {
       this.state = "dead";
       this.showOverlay(
         "He-Man ist gefallen…",
-        `Level ${this.levelId}: ${level.name}. Tippe START oder R für einen neuen Versuch.`
+        `Stufe ${this.stage} · Level ${this.levelId}: ${level.name}. Tippe START oder R.`
       );
     }
+  }
+
+  update() {
+    if (this.input.restart()) {
+      if (this.state === "campaign" || this.state === "title" || this.state === "stageclear") {
+        this.startStage(this.pendingStage || this.stage || 1);
+      } else {
+        const sword =
+          this.player?.hasSword || this.ship?.hasSword || this.carry.hasSword;
+        this.carry.hasSword = sword;
+        this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
+        this.state = "playing";
+        this.hideOverlay();
+        this.fs.enter();
+      }
+      return;
+    }
+
+    if (this.state !== "playing") {
+      if (this.input.start()) this.tryStart();
+      return;
+    }
+
+    if (this.mode === "flight") this.updateFlight();
+    else this.updateGround();
   }
 
   loop(now) {

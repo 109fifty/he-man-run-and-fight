@@ -1,4 +1,4 @@
-const CACHE = "heman-v10";
+const CACHE = "heman-v11";
 const ASSETS = [
   "./",
   "./index.html",
@@ -13,6 +13,9 @@ const ASSETS = [
   "./js/physics.js",
   "./js/renderer.js",
   "./js/fullscreen.js",
+  "./js/ship.js",
+  "./js/flight.js",
+  "./js/stage2.js",
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

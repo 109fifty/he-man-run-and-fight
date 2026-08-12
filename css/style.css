@@ -141,6 +141,62 @@ body {
   font-size: 8px;
 }
 
+.stage-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.stage-btn {
+  min-width: 120px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 3px solid var(--gold);
+  background: #1a1020;
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #6b3e0f;
+}
+
+.stage-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #6b3e0f;
+}
+
+.stage-btn[hidden] {
+  display: none !important;
+}
+
+.flight-only {
+  display: none !important;
+}
+
+body.mode-run .run-only {
+  display: unset;
+}
+
+body.mode-flight .run-only {
+  display: none !important;
+}
+
+body.mode-flight .flight-only.pad-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+body.mode-flight span.flight-only {
+  display: inline !important;
+}
+
+body.mode-run span.flight-only {
+  display: none !important;
+}
+
 .controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

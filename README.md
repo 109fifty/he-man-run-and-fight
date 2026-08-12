@@ -1,6 +1,7 @@
 # He-Man Run & Fight
 
 Jump-and-Run-Prototyp im Stil von Super Mario (NES), mit **He-Man** als Hero.  
+**Stufe 1:** 12 Run-&-Fight-Level · **Stufe 2:** 12 Flug-Level im Raumluftfahrzeug (nach Freischaltung).  
 Installierbar auf dem **iPad** als Home-Bildschirm-App (PWA).
 
 ## Schnellstart (Mac/PC)
@@ -34,23 +35,30 @@ Safari → Teilen → Zum Home-Bildschirm.
 
 ## Steuerung
 
-### Tastatur
+### Tastatur — Stufe 1
 | Taste | Aktion |
 |--------|--------|
 | *(nichts)* | Normal laufen (passiv) |
-| → / D (vorwärts) | Rennen |
+| → / D | Rennen |
 | ← / A | Umdrehen |
-| ↓ / S | Stehen bleiben |
-| Space / ↑ | Springen (rennend höher & weiter); auf Köpfe = Treffer |
-| J / X | Boxen — mit Schwert: Schwertschlag |
+| ↓ / S | Stehen |
+| Space / ↑ | Springen |
+| J / X | Boxen / Schwert |
 | K / Z | Treten |
-| Enter | Start / Weiter |
-| R | Level neu starten |
+
+### Tastatur — Stufe 2 (Flug)
+| Taste | Aktion |
+|--------|--------|
+| ↑ / W | Steigen |
+| ↓ / S | Sinken |
+| → / D | Boost |
+| C | Bremsen |
+| J / Space | Schießen |
 
 ### iPad (Touch)
-He-Man läuft von allein. Buttons: STOP, REN, Drehen, Jump, Faust, Tritt, Start, R
+Stufe 1: STOP, VOR, Jump, Faust, Tritt · Stufe 2: HOCH, RUNTER, VOR=Boost, SCHUSS
 
-## Kampagne (12 Level)
+## Stufe 1 (12 Level)
 
 1. **Wiese** — Sunny Meadow (leicht)  
 2. **Forest** — Green Forest  
@@ -66,3 +74,12 @@ He-Man läuft von allein. Buttons: STOP, REN, Drehen, Jump, Faust, Tritt, Start,
 12. **Lava** — Snake Mountain · Boss Skeletor → Hero  
 
 Schwierigkeit steigt mit jedem Level. Lava nur in Level 12. Figuren vergrößert.
+
+## Stufe 2 (12 Flug-Level)
+
+Nach Abschluss von Stufe 1 freigeschaltet. He-Man fliegt im Raumluftfahrzeug; bei Boss-Leveln Ausstieg + Bodenkampf.
+
+1. Wolkenweide · 2. Sturmfront · 3. Kristall-Canyon (Sky-Beast)  
+4. Sand-Thermik · 5. Frost-Jetstream · 6. Neon-Orbit (Trap Jaw)  
+7. Säure-Nebel · 8. Magma-Himmel · 9. Schatten-Riss (Tri-Klops)  
+10. Meteoritenschwarm · 11. Horde-Korridor · 12. Snake-Mountain-Orbit (Skeletor)

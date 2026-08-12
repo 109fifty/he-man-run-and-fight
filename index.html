@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="He-Man" />
     <meta name="theme-color" content="#0b1020" />
-    <meta name="description" content="He-Man Run & Fight — Jump and Run für iPad" />
+    <meta name="description" content="He-Man Run & Fight — Jump and Run + Flugkampf für iPad" />
     <title>He-Man Run & Fight</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
@@ -26,11 +26,11 @@
       onload="this.media='all'"
     />
   </head>
-  <body>
+  <body class="mode-run">
     <div class="app">
       <header class="topbar">
         <h1 class="brand">HE-MAN</h1>
-        <p class="tagline">Run &amp; Fight · Level 1 / 12</p>
+        <p class="tagline">Stufe 1 · Run &amp; Fight · Level 1 / 12</p>
       </header>
 
       <div class="stage-wrap">
@@ -39,9 +39,13 @@
           <div class="overlay-card">
             <h2 id="overlay-title">By the power of Grayskull!</h2>
             <p id="overlay-text">
-              12 Level · ▶ = rennen. Endkampf langsamer. Boss-Tor erst nach Sieg per JUMP. Vollbild: Icon <strong>FULL</strong> oben rechts tippen. Beenden: oben links halten → ✕.
+              Stufe 1: 12 Jump-&amp;-Run-Level. Stufe 2 (nach Freischaltung): Flug im Raumluftfahrzeug — HOCH/RUNTER, VOR=Boost, FAUST=Schuss. Endkämpfe: aussteigen!
             </p>
-            <p class="hint">Tippen oder Enter zum Start · FULL = Vollbild</p>
+            <div class="stage-pick">
+              <button type="button" class="stage-btn" id="btn-stage1" data-stage="1">STUFE 1</button>
+              <button type="button" class="stage-btn" id="btn-stage2" data-stage="2" hidden>STUFE 2</button>
+            </div>
+            <p class="hint">Tippen oder Enter · FULL = Vollbild</p>
             <p class="install-hint">
               iPad: Safari → Teilen → <strong>Zum Home-Bildschirm</strong>
             </p>
@@ -52,14 +56,18 @@
           <div class="touch-cluster left">
             <button type="button" class="pad-btn" data-action="left" data-mode="hold" title="Umdrehen">◀</button>
             <div class="touch-mid">
+              <button type="button" class="pad-btn flight-only" data-action="up" data-mode="hold">HOCH</button>
               <button type="button" class="pad-btn" data-action="down" data-mode="hold">STOP</button>
+              <button type="button" class="pad-btn flight-only" data-action="sink" data-mode="hold">RUNTER</button>
             </div>
-            <button type="button" class="pad-btn forward" data-action="right" data-mode="hold" title="Vorwärts rennen">VOR</button>
+            <button type="button" class="pad-btn forward" data-action="right" data-mode="hold" title="Vorwärts / Boost">VOR</button>
           </div>
           <div class="touch-cluster right">
-            <button type="button" class="pad-btn action" data-action="kick" data-mode="tap">TRITT</button>
-            <button type="button" class="pad-btn action" data-action="punch" data-mode="tap">FAUST</button>
-            <button type="button" class="pad-btn jump" data-action="jump" data-mode="tap">JUMP</button>
+            <button type="button" class="pad-btn action run-only" data-action="kick" data-mode="tap">TRITT</button>
+            <button type="button" class="pad-btn action" data-action="punch" data-mode="tap">
+              <span class="run-only">FAUST</span><span class="flight-only">SCHUSS</span>
+            </button>
+            <button type="button" class="pad-btn jump run-only" data-action="jump" data-mode="tap">JUMP</button>
             <button type="button" class="pad-btn ghost" data-action="start" data-mode="tap">START</button>
             <button type="button" class="pad-btn ghost" data-action="restart" data-mode="tap">R</button>
           </div>
@@ -67,13 +75,9 @@
       </div>
 
       <aside class="controls desktop-only">
-        <div>Ohne Taste: <strong>normal laufen</strong></div>
-        <div><kbd>→</kbd> / <kbd>D</kbd> Nach vorne = <strong>rennen</strong></div>
-        <div><kbd>←</kbd> / <kbd>A</kbd> Umdrehen</div>
-        <div><kbd>↓</kbd> / <kbd>S</kbd> Stehen</div>
-        <div><kbd>Space</kbd> Springen · auf Köpfe = treffen</div>
-        <div><kbd>J</kbd> Boxen / Schwert · <kbd>K</kbd> Treten</div>
-        <div><kbd>R</kbd> Neustart</div>
+        <div><strong>Stufe 1:</strong> → rennen · ← umdrehen · ↓ STOP · Space Jump · J/K Kampf</div>
+        <div><strong>Stufe 2 Flug:</strong> ↑/↓ Höhe · → Boost · C STOP · J/Space Schuss</div>
+        <div><kbd>R</kbd> Neustart · FULL-Icon = Vollbild</div>
       </aside>
     </div>
 

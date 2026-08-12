@@ -1,6 +1,7 @@
 import { Enemy, KIND } from "./enemy.js";
 
 export const TOTAL_LEVELS = 12;
+export const LEVELS_PER_STAGE = 12;
 const T = 32;
 
 function groundStrip(x, w, groundY) {
@@ -79,6 +80,8 @@ function make(def) {
     name: def.name,
     story: def.story,
     theme: def.theme || "meadow",
+    stage: 1,
+    mode: "run",
     solids,
     hazards: (def.hazards && def.hazards(groundY)) || [],
     pickups: (def.pickups && def.pickups(groundY)) || [],

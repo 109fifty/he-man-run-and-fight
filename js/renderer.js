@@ -21,6 +21,19 @@ const THEMES = {
   castle: { top: "#141828", mid: "#3a4568", bot: "#5a4a3a", mount: "#222838", grass: "#6a7a55", stone: "#6a7080" },
   spaceship: { top: "#040812", mid: "#1a2848", bot: "#0a1830", mount: "#122040", grass: "#3a8ada", stone: "#5a6a8a" },
   lava: { top: "#1a0510", mid: "#5a1028", bot: "#3a1810", mount: "#3a0a18", grass: "#8b2222", stone: "#6a3a2a" },
+  // Stufe 2
+  clouds: { top: "#9ec8f0", mid: "#c8e4ff", bot: "#7ab0e0", mount: "#e8f4ff", grass: "#fff", stone: "#bcd" },
+  storm: { top: "#1a2438", mid: "#3a4a68", bot: "#2a3548", mount: "#5a6a88", grass: "#9ab", stone: "#445" },
+  crystal: { top: "#1a1040", mid: "#4a2a8a", bot: "#2a1860", mount: "#c8a0ff", grass: "#e0c", stone: "#86a" },
+  sandsky: { top: "#4a3010", mid: "#c4a060", bot: "#e8c878", mount: "#a07030", grass: "#db8", stone: "#b88" },
+  frost: { top: "#d0e8ff", mid: "#a0c8e8", bot: "#6890b0", mount: "#ffffff", grass: "#cef", stone: "#9ab" },
+  neon: { top: "#040018", mid: "#1a0840", bot: "#0a1028", mount: "#ff2bd6", grass: "#2ff", stone: "#4a2a8a" },
+  acid: { top: "#1a3010", mid: "#3a6820", bot: "#204018", mount: "#a0e040", grass: "#8c3", stone: "#464" },
+  magmasky: { top: "#2a0810", mid: "#8a2010", bot: "#4a1008", mount: "#ff6020", grass: "#f42", stone: "#642" },
+  shadowrift: { top: "#080810", mid: "#201828", bot: "#100818", mount: "#6a2080", grass: "#a4f", stone: "#323" },
+  meteorswarm: { top: "#100808", mid: "#402010", bot: "#201008", mount: "#ff9040", grass: "#f80", stone: "#543" },
+  horde: { top: "#101818", mid: "#203028", bot: "#152018", mount: "#50a070", grass: "#3c8", stone: "#354" },
+  snakeorbit: { top: "#180810", mid: "#401028", bot: "#200818", mount: "#e04060", grass: "#c24", stone: "#422" },
 };
 
 function drawHeMan(ctx, p) {
@@ -29,7 +42,6 @@ function drawHeMan(ctx, p) {
 
   ctx.save();
   ctx.translate(Math.round(x + w / 2), Math.round(y));
-  // Basis-Sprite ~44px hoch → auf Spielerhöhe skalieren
   const s = (p.h || 64) / 44;
   ctx.scale(facing * s, s);
 
@@ -175,8 +187,8 @@ function drawNamedBoss(ctx, e) {
 function drawSkeletor(ctx, e) {
   const hero = e.kind === "heroSkeletor" || e.redeemed;
   const flash = e.hitFlash > 0;
-  const robe = hero ? (flash ? "#fff" : "#3a6ea5") : flash ? "#fff" : "#5a1a8a";
-  const bone = hero ? "#f0e6d0" : "#e8e0d0";
+  const robe = flash ? "#fff" : hero ? "#2a5a8a" : "#5a2a8a";
+  const bone = flash ? "#fff" : "#e8e0d0";
 
   drawPixelRect(ctx, e.x + 4, e.y + 14, e.w - 8, e.h - 18, robe);
   drawPixelRect(ctx, e.x + 8, e.y, e.w - 16, 16, bone);
@@ -213,6 +225,75 @@ function drawSwordPickup(ctx, x, y, t) {
   drawPixelRect(ctx, x + 7, y + bob + 16, 8, 4, "#8b5a2b");
 }
 
+function drawShip(ctx, ship, t) {
+  if (!ship || !ship.alive) return;
+  if (ship.invuln > 0 && Math.floor(ship.invuln / 3) % 2 === 0) return;
+  const { x, y, w, h, boosting } = ship;
+  const bob = Math.sin(t * 0.2) * 1.5;
+  drawPixelRect(ctx, x + 8, y + 6 + bob, w - 16, h - 10, "#f0c14b");
+  drawPixelRect(ctx, x + 4, y + 10 + bob, 12, 10, "#c4922a");
+  drawPixelRect(ctx, x + w - 18, y + 8 + bob, 16, 12, "#dfe7f5");
+  drawPixelRect(ctx, x + 18, y + 4 + bob, 14, 8, "#2b3a66");
+  drawPixelRect(ctx, x + 22, y + 6 + bob, 6, 4, "#7cf");
+  // He-Man Helm im Cockpit
+  drawPixelRect(ctx, x + 20, y + 8 + bob, 8, 6, "#f5d6a8");
+  drawPixelRect(ctx, x + 20, y + 6 + bob, 8, 3, "#f0c14b");
+  const flame = boosting ? 18 : 10;
+  drawPixelRect(ctx, x - flame, y + 10 + bob, flame, 6, boosting ? "#ff8a20" : "#ff5a1f");
+  drawPixelRect(ctx, x - flame + 2, y + 12 + bob, flame - 4, 2, "#ffe060");
+}
+
+function drawFlightHazard(ctx, h, t) {
+  if (h.kind === "meteor") {
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, "#8a4a20");
+    drawPixelRect(ctx, h.x + 4, h.y + 4, 8, 8, "#c07030");
+    drawPixelRect(ctx, h.x + 2, h.y - 6, 6, 8, "#ff6020");
+  } else if (h.kind === "lavaBall") {
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, "#ff5a1f");
+    drawPixelRect(ctx, h.x + 4, h.y + 4, 8, 8, "#ffcc40");
+  } else if (h.kind === "whirl") {
+    ctx.save();
+    ctx.translate(h.x + h.w / 2, h.y + h.h / 2);
+    ctx.rotate(h.spin || t * 0.1);
+    drawPixelRect(ctx, -20, -6, 40, 12, "rgba(200,220,255,0.45)");
+    drawPixelRect(ctx, -6, -20, 12, 40, "rgba(180,200,255,0.35)");
+    ctx.restore();
+  } else if (h.kind === "lightning") {
+    const on = Math.floor(h.flash / 3) % 2 === 0;
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, on ? "#f5f0a0" : "#a0d0ff");
+  } else if (h.kind === "ice") {
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, "#c8e8ff");
+    drawPixelRect(ctx, h.x + 2, h.y + 2, 6, 4, "#fff");
+  } else if (h.kind === "acid") {
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, "rgba(120,200,40,0.7)");
+    drawPixelRect(ctx, h.x + 4, h.y + 6, h.w - 8, 8, "#a0e040");
+  } else if (h.kind === "scrap") {
+    drawPixelRect(ctx, h.x, h.y, h.w, h.h, "#6a7080");
+    drawPixelRect(ctx, h.x + 2, h.y + 2, 6, 4, "#9ab");
+  }
+}
+
+function drawCraft(ctx, c) {
+  if (!c.alive) return;
+  const body =
+    c.kind === "horde"
+      ? "#3a8a50"
+      : c.kind === "shadow"
+        ? "#4a2060"
+        : c.kind === "jet"
+          ? "#5a6670"
+          : c.kind === "bird"
+            ? "#6a8ab0"
+            : "#8b3a3a";
+  drawPixelRect(ctx, c.x, c.y + 4, c.w, c.h - 6, body);
+  drawPixelRect(ctx, c.x + c.w - 10, c.y + 2, 12, 8, "#222");
+  drawPixelRect(ctx, c.x + 4, c.y + 8, 8, 4, "#e74c3c");
+  drawPixelRect(ctx, c.x + c.w, c.y + 10, 8, 4, "#ff5a1f");
+  for (let i = 0; i < c.maxHp; i++) {
+    drawPixelRect(ctx, c.x + i * 5, c.y - 6, 4, 3, i < c.hp ? "#e74c3c" : "#333");
+  }
+}
+
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -221,13 +302,102 @@ export class Renderer {
     this.time = 0;
   }
 
-  follow(player, level) {
-    const target = player.x - this.canvas.width * 0.35;
-    this.camX += (target - this.camX) * 0.12;
-    this.camX = Math.max(0, Math.min(level.width - this.canvas.width, this.camX));
+  follow(target, level) {
+    const targetX = target.x - this.canvas.width * 0.35;
+    this.camX += (targetX - this.camX) * 0.12;
+    this.camX = Math.max(0, Math.min(Math.max(0, level.width - this.canvas.width), this.camX));
   }
 
   draw(game) {
+    if (game.mode === "flight") {
+      this.drawFlight(game);
+      return;
+    }
+    this.drawGround(game);
+  }
+
+  drawFlight(game) {
+    const { ctx, canvas } = this;
+    const { ship, level, flight, state } = game;
+    const theme = THEMES[level.theme] || THEMES.clouds;
+    this.time += 1;
+    if (ship) this.follow(ship, level);
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grd.addColorStop(0, theme.top);
+    grd.addColorStop(0.5, theme.mid);
+    grd.addColorStop(1, theme.bot);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(-Math.round(this.camX), 0);
+
+    // Parallax-Wolken / Berge
+    ctx.fillStyle = theme.mount;
+    for (let i = 0; i < 24; i++) {
+      const mx = i * 260 + (this.time % 260) * 0.15;
+      const my = 80 + (i % 5) * 28;
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.ellipse(mx, my, 70, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Flugkorridor-Markierung
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
+    ctx.fillRect(this.camX, 0, canvas.width, level.corridor.top);
+    ctx.fillRect(this.camX, level.corridor.bottom, canvas.width, canvas.height);
+
+    // Ziel / Boss-Warnung
+    if (level.bossLevel && level.bossTrigger) {
+      ctx.fillStyle = "rgba(231,76,60,0.25)";
+      ctx.fillRect(level.bossTrigger - 40, level.corridor.top, 60, level.corridor.bottom - level.corridor.top);
+      ctx.fillStyle = "#e74c3c";
+      ctx.font = "8px 'Press Start 2P'";
+      ctx.fillText("AUSSTIEG", level.bossTrigger - 30, level.corridor.top + 24);
+    } else if (level.goal) {
+      drawPixelRect(ctx, level.goal.x, level.goal.y, level.goal.w, level.goal.h, "rgba(240,193,75,0.25)");
+      ctx.fillStyle = "#f0c14b";
+      ctx.font = "8px 'Press Start 2P'";
+      ctx.fillText("TOR", level.goal.x + 8, level.goal.y + 24);
+    }
+
+    if (flight) {
+      for (const h of flight.hazards) drawFlightHazard(ctx, h, this.time);
+      for (const c of flight.crafts) drawCraft(ctx, c);
+      for (const b of flight.bullets) {
+        drawPixelRect(
+          ctx,
+          b.x,
+          b.y,
+          b.w,
+          b.h,
+          b.from === "player" ? "#f0c14b" : "#e74c3c"
+        );
+      }
+      for (const p of flight.pickups) {
+        if (p.taken) continue;
+        if (p.kind === "heart") drawHeart(ctx, p.x, p.y + Math.sin(this.time * 0.1 + p.x) * 2);
+        if (p.kind === "sword") drawSwordPickup(ctx, p.x, p.y, this.time);
+      }
+    }
+
+    drawShip(ctx, ship, this.time);
+    ctx.restore();
+
+    this.drawHud(game);
+    if (state === "levelclear" || state === "campaign" || state === "stageclear") {
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  drawGround(game) {
     const { ctx, canvas } = this;
     const { player, level, state } = game;
     const theme = THEMES[level.theme] || THEMES.meadow;
@@ -257,12 +427,19 @@ export class Renderer {
       ctx.fill();
     }
 
-    ctx.fillStyle = level.theme === "lava" ? "#3a1020" : level.theme === "spaceship" ? "#0a1528" : "#1c2438";
-    ctx.fillRect(level.goal.x - 40, level.goal.y - 40, 100, 140);
-    ctx.fillRect(level.goal.x - 50, level.goal.y - 70, 24, 40);
-    ctx.fillRect(level.goal.x + 60, level.goal.y - 70, 24, 40);
+    if (level.goal) {
+      ctx.fillStyle =
+        level.theme === "lava" || level.theme === "snakeorbit" || level.theme === "magmasky"
+          ? "#3a1020"
+          : level.theme === "spaceship" || level.theme === "neon"
+            ? "#0a1528"
+            : "#1c2438";
+      ctx.fillRect(level.goal.x - 40, level.goal.y - 40, 100, 140);
+      ctx.fillRect(level.goal.x - 50, level.goal.y - 70, 24, 40);
+      ctx.fillRect(level.goal.x + 60, level.goal.y - 70, 24, 40);
+    }
 
-    for (const hz of level.hazards) {
+    for (const hz of level.hazards || []) {
       const pulse = 0.5 + Math.sin(this.time * 0.15 + hz.x) * 0.15;
       if (hz.kind === "lava") {
         ctx.fillStyle = `rgba(255, 70, 20, ${0.85})`;
@@ -283,12 +460,12 @@ export class Renderer {
       }
     }
 
-    for (const s of level.solids) {
+    for (const s of level.solids || []) {
       if (s.type === "ground") {
         const dirt =
-          level.theme === "spaceship"
+          level.theme === "spaceship" || level.theme === "neon"
             ? "#2a3548"
-            : level.theme === "desert"
+            : level.theme === "desert" || level.theme === "sandsky"
               ? "#a88440"
               : level.theme === "water"
                 ? "#3a5a48"
@@ -303,38 +480,37 @@ export class Renderer {
         drawPixelRect(ctx, s.x, s.y, s.w, s.h, stone);
         drawPixelRect(ctx, s.x, s.y, s.w, 4, "#a09078");
         drawPixelRect(ctx, s.x, s.y + s.h - 4, s.w, 4, "#4a4035");
-        if (level.theme === "spaceship") {
-          drawPixelRect(ctx, s.x + 4, s.y + 6, 6, 4, "#6ad");
-        }
       }
     }
 
-    for (const p of level.pickups) {
+    for (const p of level.pickups || []) {
       if (p.taken) continue;
       if (p.kind === "heart") drawHeart(ctx, p.x, p.y + Math.sin(this.time * 0.1 + p.x) * 2);
       if (p.kind === "sword") drawSwordPickup(ctx, p.x, p.y, this.time);
     }
 
-    const locked = level.requireBoss && !game.bossCleared();
-    drawPixelRect(ctx, level.goal.x + 10, level.goal.y, 6, level.goal.h, locked ? "#666" : "#c9a227");
-    drawPixelRect(
-      ctx,
-      level.goal.x + 16,
-      level.goal.y + 8,
-      28,
-      18,
-      locked ? "#444" : "#9b2226"
-    );
-    ctx.fillStyle = locked ? "#aaa" : "#f0c14b";
-    ctx.font = "8px 'Press Start 2P'";
-    ctx.fillText(locked ? "BOSS" : "TOR", level.goal.x + 18, level.goal.y + 20);
-    if (!locked && level.requireBoss && game.bossCleared()) {
-      ctx.fillStyle = "#9fe";
-      ctx.font = "7px 'Press Start 2P'";
-      ctx.fillText("JUMP!", level.goal.x + 14, level.goal.y + 36);
+    if (level.goal) {
+      const locked = level.requireBoss && !game.bossCleared();
+      drawPixelRect(ctx, level.goal.x + 10, level.goal.y, 6, level.goal.h, locked ? "#666" : "#c9a227");
+      drawPixelRect(
+        ctx,
+        level.goal.x + 16,
+        level.goal.y + 8,
+        28,
+        18,
+        locked ? "#444" : "#9b2226"
+      );
+      ctx.fillStyle = locked ? "#aaa" : "#f0c14b";
+      ctx.font = "8px 'Press Start 2P'";
+      ctx.fillText(locked ? "BOSS" : "TOR", level.goal.x + 18, level.goal.y + 20);
+      if (!locked && level.requireBoss && game.bossCleared()) {
+        ctx.fillStyle = "#9fe";
+        ctx.font = "7px 'Press Start 2P'";
+        ctx.fillText("JUMP!", level.goal.x + 14, level.goal.y + 36);
+      }
     }
 
-    for (const e of level.enemies) {
+    for (const e of level.enemies || []) {
       drawEnemy(ctx, e);
       const eh = e.getHitbox?.();
       if (eh) {
@@ -342,24 +518,25 @@ export class Renderer {
         ctx.fillRect(eh.x, eh.y, eh.w, eh.h);
       }
     }
-    drawHeMan(ctx, player);
-
-    const hb = player.getHitbox();
-    if (hb) {
-      ctx.fillStyle =
-        hb.type === "sword"
-          ? "rgba(240,193,75,0.45)"
-          : hb.type === "kick"
-            ? "rgba(100,180,255,0.35)"
-            : "rgba(255,255,255,0.35)";
-      ctx.fillRect(hb.x, hb.y, hb.w, hb.h);
+    if (player) {
+      drawHeMan(ctx, player);
+      const hb = player.getHitbox();
+      if (hb) {
+        ctx.fillStyle =
+          hb.type === "sword"
+            ? "rgba(240,193,75,0.45)"
+            : hb.type === "kick"
+              ? "rgba(100,180,255,0.35)"
+              : "rgba(255,255,255,0.35)";
+        ctx.fillRect(hb.x, hb.y, hb.w, hb.h);
+      }
     }
 
     ctx.restore();
 
     this.drawHud(game);
 
-    if (state === "levelclear" || state === "campaign") {
+    if (state === "levelclear" || state === "campaign" || state === "stageclear") {
       ctx.fillStyle = "rgba(0,0,0,0.28)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
@@ -367,21 +544,23 @@ export class Renderer {
 
   drawHud(game) {
     const { ctx, canvas } = this;
-    const { player, level } = game;
+    const { level, stage, mode } = game;
+    const actor = mode === "flight" ? game.ship : game.player;
+    if (!actor) return;
 
     drawPixelRect(ctx, 0, 0, canvas.width, 40, "rgba(10,14,28,0.72)");
     ctx.fillStyle = "#f0c14b";
-    ctx.font = "10px 'Press Start 2P'";
-    ctx.fillText(`LVL ${level.id}/12`, 12, 24);
+    ctx.font = "9px 'Press Start 2P'";
+    ctx.fillText(`S${stage} L${level.id}/12`, 12, 24);
     ctx.fillStyle = "#9aa6c3";
-    ctx.font = "8px 'Press Start 2P'";
-    const name = level.name.length > 18 ? level.name.slice(0, 16) + "…" : level.name;
-    ctx.fillText(name, 100, 24);
+    ctx.font = "7px 'Press Start 2P'";
+    const name = level.name.length > 16 ? level.name.slice(0, 14) + "…" : level.name;
+    ctx.fillText(name, 110, 24);
 
-    const startX = canvas.width - 16 - player.maxHearts * 12;
-    for (let i = 0; i < player.maxHearts; i++) {
+    const startX = canvas.width - 16 - actor.maxHearts * 12;
+    for (let i = 0; i < actor.maxHearts; i++) {
       const hx = startX + i * 12;
-      const on = i < player.hearts;
+      const on = i < actor.hearts;
       drawPixelRect(ctx, hx, 10, 4, 4, on ? "#e74c3c" : "#333");
       drawPixelRect(ctx, hx + 4, 10, 4, 4, on ? "#e74c3c" : "#333");
       drawPixelRect(ctx, hx, 13, 8, 5, on ? "#e74c3c" : "#333");
@@ -390,14 +569,22 @@ export class Renderer {
 
     ctx.fillStyle = "#f0c14b";
     ctx.font = "8px 'Press Start 2P'";
-    ctx.fillText(player.hasSword ? "SCHWERT" : "FAUST", canvas.width / 2 - 30, 24);
+    if (mode === "flight") {
+      ctx.fillText(actor.boosting ? "BOOST" : "FLUG", canvas.width / 2 - 24, 24);
+    } else {
+      ctx.fillText(actor.hasSword ? "SCHWERT" : "FAUST", canvas.width / 2 - 30, 24);
+    }
 
-    if (level.requireBoss && !game.bossCleared()) {
-      const boss = game.activeBoss();
-      const name = (boss && (boss.title || level.bossTitle)) || level.bossTitle || "BOSS";
+    if (mode === "flight" && level.bossLevel) {
       ctx.fillStyle = "#e74c3c";
       ctx.font = "7px 'Press Start 2P'";
-      ctx.fillText(`ENDKAMPF: ${String(name).toUpperCase()}`, canvas.width / 2 - 100, 52);
+      ctx.fillText("FLUG ZUM AUSSTIEG — DANN ENDKAMPF", canvas.width / 2 - 130, 52);
+    } else if (level.requireBoss && !game.bossCleared()) {
+      const boss = game.activeBoss();
+      const bname = (boss && (boss.title || level.bossTitle)) || level.bossTitle || "BOSS";
+      ctx.fillStyle = "#e74c3c";
+      ctx.font = "7px 'Press Start 2P'";
+      ctx.fillText(`ENDKAMPF: ${String(bname).toUpperCase()}`, canvas.width / 2 - 100, 52);
       if (boss) {
         const barW = 200;
         const bx = canvas.width / 2 - barW / 2;
@@ -413,7 +600,7 @@ export class Renderer {
       ctx.font = "7px 'Press Start 2P'";
       ctx.fillText("BOSS BESIEGT — IN TOR SPRINGEN", canvas.width / 2 - 110, 52);
     }
-    if (level.requireBoss && game.activeBoss()) {
+    if (level.requireBoss && game.activeBoss() && mode !== "flight") {
       ctx.fillStyle = "#9aa6c3";
       ctx.font = "6px 'Press Start 2P'";
       ctx.fillText("ENDKAMPF: LANGSAMER", 12, 52);

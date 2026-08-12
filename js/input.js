@@ -6,6 +6,8 @@ export class Input {
       left: false,
       right: false,
       down: false,
+      up: false,
+      sink: false,
       run: false,
       jump: false,
       punch: false,
@@ -91,7 +93,6 @@ export class Input {
       el.addEventListener("pointerdown", start);
       el.addEventListener("pointerup", end);
       el.addEventListener("pointercancel", end);
-      // pointerleave bewusst NICHT — sonst lösen Holds beim leichten Verrutschen
     };
 
     root.querySelectorAll("[data-action]").forEach(bind);
@@ -102,7 +103,6 @@ export class Input {
       { passive: false }
     );
 
-    // falls Capture verloren geht
     window.addEventListener("pointerup", (e) => {
       const held = this._holdPointers.get(e.pointerId);
       if (!held) return;
@@ -154,6 +154,21 @@ export class Input {
     return this.pressed("ArrowDown") || this.pressed("KeyS") || this.touch.down;
   }
 
+  /** Flug: bremsen (Touch STOP / C) */
+  brake() {
+    return this.touch.down || this.pressed("KeyC") || this.pressed("ControlLeft");
+  }
+
+  /** Flug: steigen (halten) */
+  up() {
+    return this.pressed("ArrowUp") || this.pressed("KeyW") || this.touch.up;
+  }
+
+  /** Flug: sinken (halten) */
+  sink() {
+    return this.pressed("ArrowDown") || this.pressed("KeyS") || this.touch.sink;
+  }
+
   jump() {
     return this.tap("Space") || this.tap("ArrowUp") || this.tap("KeyW") || this.touch.jump;
   }
@@ -168,6 +183,11 @@ export class Input {
 
   punch() {
     return this.tap("KeyJ") || this.tap("KeyX") || this.touch.punch;
+  }
+
+  /** Flug: Schuss (auch gehaltenes J / Touch FAUST als Tap) */
+  shoot() {
+    return this.tap("Space") || this.touch.punch;
   }
 
   kick() {
