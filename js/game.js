@@ -82,10 +82,23 @@ export class Game {
       }
     }
 
-    // Enemy contact damage
+    // Kopf-Stomp (Mario-Style) oder Kontakt-Schaden
     for (const e of level.enemies) {
       if (!e.alive) continue;
-      if (aabb(player.hurtbox, e.hurtbox)) {
+      if (!aabb(player.hurtbox, e.hurtbox)) continue;
+
+      const feet = player.y + player.h;
+      const headZone = e.y + e.h * 0.35;
+      const stomping = player.vy > 0 && feet <= headZone + 6;
+
+      if (stomping) {
+        // ein Stomp = 1 Treffer; Gegner mit 1/3/5 HP weiterhin relevant
+        e.takeHit(1);
+        player.y = e.y - player.h;
+        player.vy = -9.5;
+        player.onGround = false;
+        player.invuln = Math.max(player.invuln, 8);
+      } else if (player.invuln <= 0) {
         player.takeDamage(1);
       }
     }

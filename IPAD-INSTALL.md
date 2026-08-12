@@ -209,16 +209,16 @@ Systemeinstellungen → Netzwerk → Firewall → Optionen → Terminal/Python e
 
 ## 7. Nach der Installation: Steuerung
 
-He-Man **läuft passiv**. Aktiv nur Extra-Eingaben:
+He-Man **läuft normal von allein**. Vorwärts = rennen. Auf Köpfe springen trifft Gegner.
 
 | Button / Taste | Aktion |
 |----------------|--------|
-| *(nichts)* | Passiv normal laufen |
-| STOP / ↓ | Aktiv stehen |
-| REN / Shift | Aktiv rennen |
-| ◀ ▶ | Richtung drehen |
-| JUMP / Space | Springen (rennend: höher & weiter) |
-| FAUST / J | Boxen — mit Schwert: Schwertschlag |
+| *(nichts)* | Normal laufen |
+| ▶ (vorwärts) | Rennen |
+| ◀ | Umdrehen |
+| STOP / ↓ | Stehen |
+| JUMP / Space | Springen · auf Köpfe = Treffer |
+| FAUST / J | Boxen / Schwert |
 | TRITT / K | Treten |
 | START | Spiel starten |
 | R | Level neu |

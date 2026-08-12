@@ -37,11 +37,11 @@ Safari → Teilen → Zum Home-Bildschirm.
 ### Tastatur
 | Taste | Aktion |
 |--------|--------|
-| *(nichts)* | Passiv normal laufen |
-| ↓ / S | Aktiv stehen bleiben |
-| Shift | Aktiv rennen |
-| ← → / A D | Richtung drehen |
-| Space / ↑ | Springen (Renn-Sprung höher & weiter) |
+| *(nichts)* | Normal laufen (passiv) |
+| → / D (vorwärts) | Rennen |
+| ← / A | Umdrehen |
+| ↓ / S | Stehen bleiben |
+| Space / ↑ | Springen (rennend höher & weiter); auf Köpfe = Treffer |
 | J / X | Boxen — mit Schwert: Schwertschlag |
 | K / Z | Treten |
 | Enter | Start / Weiter |

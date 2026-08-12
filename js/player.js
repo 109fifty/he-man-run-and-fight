@@ -103,16 +103,17 @@ export class Player {
 
     if (this.invuln > 0) this.invuln -= 1;
 
-    // Passives Laufen: ohne Input geht He-Man normal vorwärts.
-    // Aktiv: Stehen (↓), Rennen (Shift), optional Richtung drehen (←/→).
+    // Passiv: normales Laufen. Vorwärts-Taste (in Blickrichtung) = rennen.
+    // Gegenrichtung = umdrehen. STOP = stehen. Shift/REN bleibt optional.
     this.holdStill = input.down();
-    const wantRun = input.run() && !this.holdStill;
-    const turnLeft = input.left() && !input.right();
-    const turnRight = input.right() && !input.left();
     if (!this.holdStill) {
-      if (turnLeft) this.facing = -1;
-      if (turnRight) this.facing = 1;
+      if (this.facing === 1 && input.left() && !input.right()) this.facing = -1;
+      else if (this.facing === -1 && input.right() && !input.left()) this.facing = 1;
     }
+    const pressForward =
+      (this.facing === 1 && input.right()) ||
+      (this.facing === -1 && input.left());
+    const wantRun = !this.holdStill && (pressForward || input.run());
 
     if (this.attack) {
       this.attack.timer -= 1;
