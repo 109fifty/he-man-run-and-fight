@@ -1,6 +1,6 @@
 import { Input } from "./input.js";
 import { Player } from "./player.js";
-import { createLevel1 } from "./level.js";
+import { createLevel, TOTAL_LEVELS } from "./level.js";
 import { Renderer } from "./renderer.js";
 import { aabb } from "./physics.js";
 
@@ -12,8 +12,10 @@ export class Game {
     this.overlayText = document.getElementById("overlay-text");
     this.input = new Input();
     this.renderer = new Renderer(canvas);
-    this.state = "title"; // title | playing | dead | won
-    this.loadLevel();
+    this.state = "title"; // title | playing | dead | levelclear | campaign
+    this.levelId = 1;
+    this.carry = { hasSword: false, hearts: null };
+    this.loadLevel(this.levelId, true);
     this._boundClick = (e) => {
       e.preventDefault();
       this.tryStart();
@@ -24,13 +26,28 @@ export class Game {
     this.step = 1000 / 60;
     this.maxSteps = 5;
     this.running = true;
+    this._redeemShown = false;
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  loadLevel() {
-    this.level = createLevel1();
+  loadLevel(id, freshRun = false) {
+    this.levelId = id;
+    this.level = createLevel(id);
     this.player = new Player(this.level.spawn.x, this.level.spawn.y);
+    if (!freshRun && this.carry.hearts != null) {
+      this.player.hearts = this.carry.hearts;
+      this.player.hasSword = this.carry.hasSword;
+    } else if (!freshRun && this.carry.hasSword) {
+      this.player.hasSword = true;
+    }
     this.renderer.camX = 0;
+    this._redeemShown = false;
+    this.updateTagline();
+  }
+
+  updateTagline() {
+    const el = document.querySelector(".tagline");
+    if (el) el.textContent = `Run & Fight · Level ${this.levelId} / ${TOTAL_LEVELS}`;
   }
 
   showOverlay(title, text) {
@@ -44,16 +61,53 @@ export class Game {
   }
 
   tryStart() {
-    if (this.state === "title" || this.state === "dead" || this.state === "won") {
-      this.loadLevel();
+    if (this.state === "title") {
+      this.levelId = 1;
+      this.carry = { hasSword: false, hearts: null };
+      this.loadLevel(1, true);
+      this.state = "playing";
+      this.hideOverlay();
+      return;
+    }
+    if (this.state === "dead") {
+      this.loadLevel(this.levelId, false);
+      this.state = "playing";
+      this.hideOverlay();
+      return;
+    }
+    if (this.state === "levelclear") {
+      const next = this.levelId + 1;
+      this.carry = {
+        hasSword: this.player.hasSword,
+        hearts: this.player.hearts,
+      };
+      this.loadLevel(next, false);
+      this.state = "playing";
+      this.hideOverlay();
+      return;
+    }
+    if (this.state === "campaign") {
+      this.levelId = 1;
+      this.carry = { hasSword: false, hearts: null };
+      this.loadLevel(1, true);
       this.state = "playing";
       this.hideOverlay();
     }
   }
 
+  skeletorRedeemed() {
+    return this.level.enemies.some((e) => e.redeemed || e.kind === "heroSkeletor");
+  }
+
   update() {
     if (this.input.restart()) {
-      this.loadLevel();
+      if (this.state === "campaign") {
+        this.levelId = 1;
+        this.carry = { hasSword: false, hearts: null };
+        this.loadLevel(1, true);
+      } else {
+        this.loadLevel(this.levelId, false);
+      }
       this.state = "playing";
       this.hideOverlay();
       return;
@@ -69,11 +123,10 @@ export class Game {
 
     for (const e of level.enemies) e.update(level.solids);
 
-    // Combat — hitIds liegt auf player.attack (nicht neu erzeugen)
     const hitbox = player.getHitbox();
     if (hitbox && player.attack) {
       for (const e of level.enemies) {
-        if (!e.alive) continue;
+        if (!e.alive || e.redeemed) continue;
         if (player.attack.hitIds.has(e.id)) continue;
         if (aabb(hitbox, e.hurtbox)) {
           player.attack.hitIds.add(e.id);
@@ -82,9 +135,8 @@ export class Game {
       }
     }
 
-    // Kopf-Stomp (Mario-Style) oder Kontakt-Schaden
     for (const e of level.enemies) {
-      if (!e.alive) continue;
+      if (!e.alive || e.redeemed) continue;
       if (!aabb(player.hurtbox, e.hurtbox)) continue;
 
       const feet = player.y + player.h;
@@ -92,7 +144,6 @@ export class Game {
       const stomping = player.vy > 0 && feet <= headZone + 6;
 
       if (stomping) {
-        // ein Stomp = 1 Treffer; Gegner mit 1/3/5 HP weiterhin relevant
         e.takeHit(1);
         player.y = e.y - player.h;
         player.vy = -9.5;
@@ -103,7 +154,11 @@ export class Game {
       }
     }
 
-    // Pickups
+    if (level.requireRedeem && this.skeletorRedeemed() && !this._redeemShown) {
+      this._redeemShown = true;
+      // kurze Story-Einblendung ohne Pause des Levels — Tor wird freigeschaltet
+    }
+
     for (const p of level.pickups) {
       if (p.taken) continue;
       if (!aabb(player.hurtbox, p)) continue;
@@ -112,16 +167,25 @@ export class Game {
       if (p.kind === "sword") player.hasSword = true;
     }
 
-    // Goal
-    if (aabb(player.hurtbox, level.goal)) {
-      this.state = "won";
-      this.showOverlay(
-        "Level 1 geschafft!",
-        "Tor erreicht. Später: 12 Level — und Skeletor wird zum guten Hero. Tippe START oder R."
-      );
+    const canFinish =
+      !level.requireRedeem || this.skeletorRedeemed();
+
+    if (canFinish && aabb(player.hurtbox, level.goal)) {
+      if (this.levelId >= TOTAL_LEVELS) {
+        this.state = "campaign";
+        this.showOverlay(
+          "Skeletor ist ein Hero!",
+          "Durch deine Stärke fand er das Licht. Alle 12 Level geschafft. Tippe START für ein neues Abenteuer."
+        );
+      } else {
+        this.state = "levelclear";
+        this.showOverlay(
+          `Level ${this.levelId} geschafft!`,
+          `${level.name} — als Nächstes: Level ${this.levelId + 1}. Tippe START.`
+        );
+      }
     }
 
-    // Fall death
     if (player.y > level.height + 80) {
       player.hearts = 0;
       player.alive = false;
@@ -131,7 +195,7 @@ export class Game {
       this.state = "dead";
       this.showOverlay(
         "He-Man ist gefallen…",
-        "Die Macht von Grayskull wartet. Tippe START oder R für einen neuen Versuch."
+        `Level ${this.levelId}: ${level.name}. Tippe START oder R für einen neuen Versuch.`
       );
     }
   }
@@ -157,8 +221,6 @@ export class Game {
       steps += 1;
     }
     if (steps === this.maxSteps) this.acc = 0;
-
-    // Edge-Inputs erst nach mindestens einem Update verwerfen
     if (steps > 0) this.input.endFrame();
 
     this.renderer.draw(this);

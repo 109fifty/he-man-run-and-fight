@@ -2,15 +2,25 @@ import { aabb, resolveSolid } from "./physics.js";
 
 const GRAVITY = 0.55;
 
+const KIND = {
+  scout: { w: 24, h: 32, speed: 1.4 },
+  grunt: { w: 30, h: 40, speed: 1.0 },
+  brute: { w: 36, h: 48, speed: 0.7 },
+  skeletor: { w: 40, h: 56, speed: 1.1 },
+  heroSkeletor: { w: 40, h: 56, speed: 0 },
+};
+
 export class Enemy {
   constructor({ x, y, hp, kind = "grunt", patrol = 80 }) {
+    const k = KIND[kind] || KIND.grunt;
     this.x = x;
     this.y = y;
-    this.w = kind === "brute" ? 36 : kind === "scout" ? 24 : 30;
-    this.h = kind === "brute" ? 48 : kind === "scout" ? 32 : 40;
+    this.w = k.w;
+    this.h = k.h;
     this.hp = hp;
     this.maxHp = hp;
     this.kind = kind;
+    this.baseSpeed = k.speed;
     this.vx = 0;
     this.vy = 0;
     this.dir = -1;
@@ -21,6 +31,7 @@ export class Enemy {
     this.animTimer = 0;
     this.turnCooldown = 0;
     this.stun = 0;
+    this.redeemed = false;
     this.id = `${kind}-${x}-${y}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
@@ -29,12 +40,21 @@ export class Enemy {
   }
 
   takeHit(damage) {
-    if (!this.alive) return false;
+    if (!this.alive || this.redeemed) return false;
     this.hp -= damage;
     this.hitFlash = 10;
-    this.stun = 18;
+    this.stun = this.kind === "skeletor" ? 10 : 18;
     this.vx = 0;
     if (this.hp <= 0) {
+      if (this.kind === "skeletor") {
+        // Wird zum guten Hero — bleibt stehen, nicht „tot“
+        this.redeemed = true;
+        this.kind = "heroSkeletor";
+        this.hp = 0;
+        this.vx = 0;
+        this.dir = 1;
+        return true;
+      }
       this.alive = false;
       return true;
     }
@@ -42,7 +62,7 @@ export class Enemy {
   }
 
   speed() {
-    return this.kind === "scout" ? 1.4 : this.kind === "brute" ? 0.7 : 1.0;
+    return this.baseSpeed;
   }
 
   update(solids) {
@@ -52,11 +72,19 @@ export class Enemy {
     if (this.turnCooldown > 0) this.turnCooldown -= 1;
     if (this.stun > 0) this.stun -= 1;
 
+    if (this.redeemed || this.kind === "heroSkeletor") {
+      this.vx = 0;
+      this.vy += GRAVITY;
+      if (this.vy > 12) this.vy = 12;
+      resolveSolid(this, solids);
+      return;
+    }
+
     const turn = () => {
       if (this.turnCooldown > 0) return;
       this.dir *= -1;
       this.turnCooldown = 16;
-      this.originX = this.x; // Patrol-Anker nach Wende, verhindert Zucken am Rand
+      this.originX = this.x;
     };
 
     if (this.stun > 0) {
@@ -84,7 +112,6 @@ export class Enemy {
       if (!onLedge) turn();
     }
 
-    // aus der Welt gefallen
     if (this.y > 2000) this.alive = false;
   }
 }

@@ -50,13 +50,19 @@ Safari → Teilen → Zum Home-Bildschirm.
 ### iPad (Touch)
 He-Man läuft von allein. Buttons: STOP, REN, Drehen, Jump, Faust, Tritt, Start, R
 
-## Prototyp (Level 1 / 12)
+## Kampagne (12 Level)
 
-- Passives Laufen / aktives Stehen / aktives Rennen / Springen
-- Treten, Boxen, Schwert (nach Fund)
-- Plattformen, Lava-Klippen
-- Gegner mit 1 / 3 / 5 Treffern
-- 15 Herzen + Herz-Pickups
-- Ziel-Tor
+1. Eternia Outskirts  
+2. Vine Jungle  
+3. Whispering Woods  
+4. Crystal Caves  
+5. Ice Peaks  
+6. Desert of Lost Kings  
+7. Snake Mountain Foothills  
+8. Obsidian Bridge  
+9. Grayskull Approach  
+10. Inner Sanctum  
+11. Throne Corridor  
+12. Snake Mountain Throne — Skeletor wird zum guten Hero  
 
-Geplant: 12 Level — am Ende wird Skeletor zum guten Hero.
+Mechanik: passives Laufen, Vorwärts = rennen, Kopf-Stomp, Faust/Schwert/Tritt, Lava, 15 Herzen.

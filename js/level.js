@@ -1,98 +1,544 @@
 import { Enemy } from "./enemy.js";
 
-/** Level 1 — Eternia Outskirts (prototype of 12 planned stages) */
-export function createLevel1() {
-  const TILE = 32;
-  const groundY = 14 * TILE;
+export const TOTAL_LEVELS = 12;
+const T = 32;
 
-  const solids = [
-    // Start plateau
-    { x: 0, y: groundY, w: 18 * TILE, h: 4 * TILE, type: "ground" },
-    // Steps up
-    { x: 14 * TILE, y: groundY - TILE, w: 3 * TILE, h: TILE, type: "stone" },
-    { x: 16 * TILE, y: groundY - 2 * TILE, w: 3 * TILE, h: 2 * TILE, type: "stone" },
-    { x: 18 * TILE, y: groundY - 3 * TILE, w: 4 * TILE, h: 3 * TILE, type: "stone" },
-    // Mid platforms over lava gap
-    { x: 24 * TILE, y: groundY - 2 * TILE, w: 3 * TILE, h: TILE, type: "stone" },
-    { x: 29 * TILE, y: groundY - 3 * TILE, w: 3 * TILE, h: TILE, type: "stone" },
-    { x: 34 * TILE, y: groundY - 2 * TILE, w: 4 * TILE, h: TILE, type: "stone" },
-    // Far ground — mit Lücke für Lava-Pit (56–60)
-    { x: 40 * TILE, y: groundY, w: 16 * TILE, h: 4 * TILE, type: "ground" },
-    { x: 60 * TILE, y: groundY, w: 6 * TILE, h: 4 * TILE, type: "ground" },
-    // Floating parkour
-    { x: 46 * TILE, y: groundY - 3 * TILE, w: 2 * TILE, h: TILE, type: "stone" },
-    { x: 50 * TILE, y: groundY - 4 * TILE, w: 2 * TILE, h: TILE, type: "stone" },
-    { x: 54 * TILE, y: groundY - 5 * TILE, w: 3 * TILE, h: TILE, type: "stone" },
-    { x: 58 * TILE, y: groundY - 3 * TILE, w: 2 * TILE, h: TILE, type: "stone" },
-    // Castle approach
-    { x: 62 * TILE, y: groundY - TILE, w: 4 * TILE, h: TILE, type: "stone" },
-    { x: 64 * TILE, y: groundY - 2 * TILE, w: 4 * TILE, h: 2 * TILE, type: "stone" },
-    { x: 66 * TILE, y: groundY - 3 * TILE, w: 6 * TILE, h: 3 * TILE, type: "stone" },
-  ];
+function groundStrip(x, w, groundY) {
+  return { x: x * T, y: groundY, w: w * T, h: 4 * T, type: "ground" };
+}
 
-  const hazards = [
-    // Große Lava-Klippe
-    {
-      x: 22 * TILE,
-      y: groundY + 8,
-      w: 18 * TILE,
-      h: 3 * TILE,
-      kind: "lava",
-      damage: 4,
-    },
-    // Lava-Pit in der Bodenlücke
-    {
-      x: 56 * TILE,
-      y: groundY + 8,
-      w: 4 * TILE,
-      h: 3 * TILE,
-      kind: "lava",
-      damage: 3,
-    },
-  ];
+function plat(x, up, w, groundY) {
+  return { x: x * T, y: groundY - up * T, w: w * T, h: T, type: "stone" };
+}
 
-  const pickups = [
-    { x: 15 * TILE + 8, y: groundY - 2 * TILE - 24, w: 18, h: 16, kind: "heart", value: 2, taken: false },
-    { x: 30 * TILE + 4, y: groundY - 4 * TILE - 24, w: 18, h: 16, kind: "heart", value: 3, taken: false },
-    { x: 35 * TILE + 8, y: groundY - 3 * TILE - 28, w: 22, h: 22, kind: "sword", taken: false },
-    { x: 51 * TILE + 4, y: groundY - 5 * TILE - 24, w: 18, h: 16, kind: "heart", value: 2, taken: false },
-    { x: 55 * TILE + 8, y: groundY - 6 * TILE - 24, w: 18, h: 16, kind: "heart", value: 1, taken: false },
-  ];
+function block(x, up, w, h, groundY) {
+  return { x: x * T, y: groundY - up * T, w: w * T, h: h * T, type: "stone" };
+}
 
-  const enemies = [
-    new Enemy({ x: 10 * TILE, y: groundY - 40, hp: 1, kind: "scout", patrol: 70 }),
-    new Enemy({ x: 19 * TILE, y: groundY - 3 * TILE - 40, hp: 3, kind: "grunt", patrol: 50 }),
-    new Enemy({ x: 35 * TILE, y: groundY - 2 * TILE - 40, hp: 1, kind: "scout", patrol: 40 }),
-    new Enemy({ x: 44 * TILE, y: groundY - 40, hp: 3, kind: "grunt", patrol: 90 }),
-    new Enemy({ x: 48 * TILE, y: groundY - 40, hp: 1, kind: "scout", patrol: 60 }),
-    new Enemy({ x: 54 * TILE + 8, y: groundY - 5 * TILE - 48, hp: 5, kind: "brute", patrol: 30 }),
-    new Enemy({ x: 67 * TILE, y: groundY - 3 * TILE - 48, hp: 5, kind: "brute", patrol: 40 }),
-  ];
+function lava(x, w, groundY, damage = 3) {
+  return { x: x * T, y: groundY + 8, w: w * T, h: 3 * T, kind: "lava", damage };
+}
 
-  const goal = {
-    x: 70 * TILE,
-    y: groundY - 3 * TILE - 96,
-    w: 28,
-    h: 96,
+function heart(x, up, groundY, value = 2) {
+  return {
+    x: x * T + 8,
+    y: groundY - up * T - 24,
+    w: 18,
+    h: 16,
+    kind: "heart",
+    value,
+    taken: false,
   };
+}
 
-  const spawn = { x: 2 * TILE, y: groundY - 48 };
-  const width = 74 * TILE;
-  const height = 18 * TILE;
+function sword(x, up, groundY) {
+  return {
+    x: x * T + 8,
+    y: groundY - up * T - 28,
+    w: 22,
+    h: 22,
+    kind: "sword",
+    taken: false,
+  };
+}
+
+function foe(x, up, groundY, hp, kind, patrol = 60) {
+  const h = kind === "skeletor" ? 56 : kind === "brute" ? 48 : kind === "scout" ? 32 : 40;
+  return new Enemy({
+    x: x * T,
+    y: groundY - up * T - h,
+    hp,
+    kind,
+    patrol,
+  });
+}
+
+function make(def) {
+  const groundY = 14 * T;
+  const widthTiles = def.widthTiles || 78;
+  const goalX = def.goalX ?? widthTiles - 4;
+  const goalUp = def.goalUp ?? 3;
 
   return {
+    id: def.id,
+    name: def.name,
+    story: def.story,
+    theme: def.theme || "outskirts",
+    solids: def.solids(groundY),
+    hazards: (def.hazards && def.hazards(groundY)) || [],
+    pickups: (def.pickups && def.pickups(groundY)) || [],
+    enemies: (def.enemies && def.enemies(groundY)) || [],
+    goal: {
+      x: goalX * T,
+      y: groundY - goalUp * T - 96,
+      w: 28,
+      h: 96,
+    },
+    spawn: { x: 2 * T, y: groundY - 48 },
+    width: widthTiles * T,
+    height: 18 * T,
+    groundY,
+    bossLevel: !!def.bossLevel,
+    requireRedeem: !!def.requireRedeem,
+  };
+}
+
+const DEFS = [
+  {
     id: 1,
     name: "Eternia Outskirts",
-    story:
-      "Level 1 von 12 — Am Ende wird Skeletor zum guten Hero. Jetzt: rette die Außenposten!",
-    solids,
-    hazards,
-    pickups,
-    enemies,
-    goal,
-    spawn,
-    width,
-    height,
-    groundY,
-  };
+    theme: "outskirts",
+    story: "Die Außenposten sind in Gefahr. Der Weg nach Snake Mountain beginnt.",
+    widthTiles: 74,
+    goalX: 70,
+    goalUp: 3,
+    solids: (g) => [
+      groundStrip(0, 18, g),
+      plat(14, 1, 3, g),
+      block(16, 2, 3, 2, g),
+      block(18, 3, 4, 3, g),
+      plat(24, 2, 3, g),
+      plat(29, 3, 3, g),
+      plat(34, 2, 4, g),
+      groundStrip(40, 16, g),
+      groundStrip(60, 6, g),
+      plat(46, 3, 2, g),
+      plat(50, 4, 2, g),
+      plat(54, 5, 3, g),
+      plat(58, 3, 2, g),
+      block(62, 1, 4, 1, g),
+      block(64, 2, 4, 2, g),
+      block(66, 3, 6, 3, g),
+    ],
+    hazards: (g) => [lava(22, 18, g, 4), lava(56, 4, g, 3)],
+    pickups: (g) => [
+      heart(15, 2, g, 2),
+      heart(30, 4, g, 3),
+      sword(35, 3, g),
+      heart(51, 5, g, 2),
+      heart(55, 6, g, 1),
+    ],
+    enemies: (g) => [
+      foe(10, 0, g, 1, "scout", 70),
+      foe(19, 3, g, 3, "grunt", 50),
+      foe(35, 2, g, 1, "scout", 40),
+      foe(44, 0, g, 3, "grunt", 90),
+      foe(48, 0, g, 1, "scout", 60),
+      foe(54, 5, g, 5, "brute", 30),
+      foe(67, 3, g, 5, "brute", 40),
+    ],
+  },
+  {
+    id: 2,
+    name: "Vine Jungle",
+    theme: "jungle",
+    story: "Ranken und Fallgruben. Bleib auf den Pfaden der Alten.",
+    widthTiles: 80,
+    goalX: 76,
+    goalUp: 2,
+    solids: (g) => [
+      groundStrip(0, 12, g),
+      plat(10, 2, 3, g),
+      plat(15, 3, 2, g),
+      plat(19, 4, 3, g),
+      groundStrip(24, 10, g),
+      plat(36, 2, 2, g),
+      plat(40, 3, 2, g),
+      plat(44, 4, 3, g),
+      plat(49, 2, 2, g),
+      groundStrip(54, 8, g),
+      plat(64, 2, 3, g),
+      plat(68, 3, 2, g),
+      groundStrip(72, 8, g),
+    ],
+    hazards: (g) => [lava(12, 12, g, 3), lava(34, 20, g, 4), lava(62, 10, g, 3)],
+    pickups: (g) => [heart(11, 3, g, 2), sword(20, 5, g), heart(45, 5, g, 3), heart(69, 4, g, 2)],
+    enemies: (g) => [
+      foe(6, 0, g, 1, "scout", 50),
+      foe(27, 0, g, 3, "grunt", 70),
+      foe(30, 0, g, 1, "scout", 40),
+      foe(44, 4, g, 3, "grunt", 30),
+      foe(57, 0, g, 5, "brute", 50),
+      foe(74, 0, g, 3, "grunt", 40),
+    ],
+  },
+  {
+    id: 3,
+    name: "Whispering Woods",
+    theme: "jungle",
+    story: "Die Bäume flüstern Warnungen — Skeletors Späher sind nah.",
+    widthTiles: 82,
+    goalX: 78,
+    goalUp: 3,
+    solids: (g) => [
+      groundStrip(0, 16, g),
+      plat(14, 2, 2, g),
+      plat(18, 3, 2, g),
+      plat(22, 2, 4, g),
+      groundStrip(28, 6, g),
+      plat(36, 3, 2, g),
+      plat(40, 4, 2, g),
+      plat(44, 5, 3, g),
+      plat(49, 3, 2, g),
+      groundStrip(54, 12, g),
+      block(66, 1, 3, 1, g),
+      block(68, 2, 3, 2, g),
+      block(70, 3, 8, 3, g),
+    ],
+    hazards: (g) => [lava(16, 12, g), lava(34, 20, g, 4)],
+    pickups: (g) => [heart(15, 3, g), heart(41, 5, g, 3), sword(45, 6, g), heart(71, 4, g, 2)],
+    enemies: (g) => [
+      foe(8, 0, g, 1, "scout", 80),
+      foe(12, 0, g, 1, "scout", 40),
+      foe(22, 2, g, 3, "grunt", 40),
+      foe(30, 0, g, 3, "grunt", 50),
+      foe(44, 5, g, 5, "brute", 25),
+      foe(58, 0, g, 3, "grunt", 70),
+      foe(72, 3, g, 5, "brute", 40),
+    ],
+  },
+  {
+    id: 4,
+    name: "Crystal Caves",
+    theme: "cave",
+    story: "Eng, dunkel, und unter dir brodelt Magma.",
+    widthTiles: 84,
+    goalX: 80,
+    goalUp: 2,
+    solids: (g) => [
+      groundStrip(0, 10, g),
+      plat(8, 2, 2, g),
+      plat(12, 3, 2, g),
+      plat(16, 4, 2, g),
+      plat(20, 3, 3, g),
+      plat(25, 2, 2, g),
+      groundStrip(30, 8, g),
+      plat(40, 2, 2, g),
+      plat(44, 3, 2, g),
+      plat(48, 4, 2, g),
+      plat(52, 5, 3, g),
+      plat(57, 3, 2, g),
+      plat(61, 2, 2, g),
+      groundStrip(66, 10, g),
+      plat(76, 2, 4, g),
+    ],
+    hazards: (g) => [lava(10, 20, g, 4), lava(38, 28, g, 5), lava(76, 4, g)],
+    pickups: (g) => [sword(17, 5, g), heart(21, 4, g, 3), heart(53, 6, g, 2), heart(68, 0, g, 2)],
+    enemies: (g) => [
+      foe(5, 0, g, 1, "scout", 40),
+      foe(20, 3, g, 3, "grunt", 30),
+      foe(33, 0, g, 3, "grunt", 60),
+      foe(52, 5, g, 5, "brute", 20),
+      foe(70, 0, g, 5, "brute", 50),
+      foe(78, 2, g, 3, "grunt", 30),
+    ],
+  },
+  {
+    id: 5,
+    name: "Ice Peaks",
+    theme: "ice",
+    story: "Glatte Kanten — ein Fehltritt, und du stürzt in die Kluft.",
+    widthTiles: 86,
+    goalX: 82,
+    goalUp: 4,
+    solids: (g) => [
+      groundStrip(0, 14, g),
+      plat(12, 2, 2, g),
+      plat(16, 3, 2, g),
+      plat(20, 4, 2, g),
+      plat(24, 5, 2, g),
+      plat(28, 3, 3, g),
+      groundStrip(34, 6, g),
+      plat(42, 2, 2, g),
+      plat(46, 4, 2, g),
+      plat(50, 5, 2, g),
+      plat(54, 3, 2, g),
+      plat(58, 2, 3, g),
+      groundStrip(64, 8, g),
+      block(72, 1, 2, 1, g),
+      block(74, 2, 2, 2, g),
+      block(76, 3, 2, 3, g),
+      block(78, 4, 6, 4, g),
+    ],
+    hazards: (g) => [lava(14, 20, g, 4), lava(40, 24, g, 5)],
+    pickups: (g) => [heart(13, 3, g), sword(25, 6, g), heart(51, 6, g, 3), heart(79, 5, g, 2)],
+    enemies: (g) => [
+      foe(7, 0, g, 1, "scout", 60),
+      foe(28, 3, g, 3, "grunt", 30),
+      foe(36, 0, g, 3, "grunt", 40),
+      foe(50, 5, g, 5, "brute", 20),
+      foe(66, 0, g, 3, "grunt", 50),
+      foe(80, 4, g, 5, "brute", 35),
+    ],
+  },
+  {
+    id: 6,
+    name: "Desert of Lost Kings",
+    theme: "desert",
+    story: "Hitze, Ruinen und Wächter aus Sandstein.",
+    widthTiles: 88,
+    goalX: 84,
+    goalUp: 2,
+    solids: (g) => [
+      groundStrip(0, 20, g),
+      plat(18, 2, 3, g),
+      plat(24, 3, 2, g),
+      groundStrip(28, 8, g),
+      plat(38, 2, 2, g),
+      plat(42, 3, 2, g),
+      plat(46, 4, 4, g),
+      groundStrip(52, 10, g),
+      plat(64, 2, 2, g),
+      plat(68, 3, 3, g),
+      plat(73, 2, 2, g),
+      groundStrip(78, 10, g),
+    ],
+    hazards: (g) => [lava(20, 8, g, 3), lava(36, 16, g, 4), lava(62, 16, g, 4)],
+    pickups: (g) => [heart(19, 3, g), sword(47, 5, g), heart(55, 0, g, 3), heart(69, 4, g, 2)],
+    enemies: (g) => [
+      foe(8, 0, g, 1, "scout", 90),
+      foe(14, 0, g, 3, "grunt", 70),
+      foe(31, 0, g, 3, "grunt", 50),
+      foe(46, 4, g, 5, "brute", 40),
+      foe(58, 0, g, 1, "scout", 60),
+      foe(68, 3, g, 5, "brute", 30),
+      foe(82, 0, g, 3, "grunt", 40),
+    ],
+  },
+  {
+    id: 7,
+    name: "Snake Mountain Foothills",
+    theme: "dark",
+    story: "Der Schatten von Snake Mountain fällt auf den Pfad.",
+    widthTiles: 90,
+    goalX: 86,
+    goalUp: 3,
+    solids: (g) => [
+      groundStrip(0, 12, g),
+      plat(10, 2, 2, g),
+      plat(14, 3, 2, g),
+      plat(18, 4, 3, g),
+      groundStrip(24, 8, g),
+      plat(34, 2, 2, g),
+      plat(38, 3, 2, g),
+      plat(42, 4, 2, g),
+      plat(46, 5, 3, g),
+      plat(51, 3, 2, g),
+      groundStrip(56, 10, g),
+      plat(68, 2, 2, g),
+      plat(72, 3, 2, g),
+      block(76, 1, 3, 1, g),
+      block(78, 2, 3, 2, g),
+      block(80, 3, 8, 3, g),
+    ],
+    hazards: (g) => [lava(12, 12, g, 4), lava(32, 24, g, 5), lava(66, 10, g, 4)],
+    pickups: (g) => [sword(19, 5, g), heart(35, 3, g, 2), heart(47, 6, g, 3), heart(81, 4, g, 2)],
+    enemies: (g) => [
+      foe(6, 0, g, 3, "grunt", 50),
+      foe(18, 4, g, 3, "grunt", 30),
+      foe(27, 0, g, 5, "brute", 40),
+      foe(46, 5, g, 5, "brute", 25),
+      foe(60, 0, g, 3, "grunt", 70),
+      foe(73, 3, g, 1, "scout", 20),
+      foe(83, 3, g, 5, "brute", 40),
+    ],
+  },
+  {
+    id: 8,
+    name: "Obsidian Bridge",
+    theme: "dark",
+    story: "Nur schmale Stege über dem Abgrund. Kein Zurück.",
+    widthTiles: 92,
+    goalX: 88,
+    goalUp: 2,
+    solids: (g) => [
+      groundStrip(0, 8, g),
+      plat(10, 2, 2, g),
+      plat(14, 3, 2, g),
+      plat(18, 2, 2, g),
+      plat(22, 3, 2, g),
+      plat(26, 4, 3, g),
+      plat(31, 2, 2, g),
+      plat(35, 3, 2, g),
+      plat(39, 4, 2, g),
+      plat(43, 3, 2, g),
+      plat(47, 2, 3, g),
+      groundStrip(52, 6, g),
+      plat(60, 2, 2, g),
+      plat(64, 3, 2, g),
+      plat(68, 4, 2, g),
+      plat(72, 3, 2, g),
+      plat(76, 2, 2, g),
+      groundStrip(80, 12, g),
+    ],
+    hazards: (g) => [lava(8, 44, g, 5), lava(58, 22, g, 5)],
+    pickups: (g) => [heart(11, 3, g), sword(27, 5, g), heart(48, 3, g, 3), heart(69, 5, g, 2)],
+    enemies: (g) => [
+      foe(4, 0, g, 1, "scout", 30),
+      foe(26, 4, g, 3, "grunt", 25),
+      foe(39, 4, g, 5, "brute", 20),
+      foe(54, 0, g, 3, "grunt", 40),
+      foe(68, 4, g, 5, "brute", 20),
+      foe(84, 0, g, 5, "brute", 50),
+    ],
+  },
+  {
+    id: 9,
+    name: "Grayskull Approach",
+    theme: "castle",
+    story: "Das Schloss ruft — aber der Weg ist von Skeletors Elite bewacht.",
+    widthTiles: 94,
+    goalX: 90,
+    goalUp: 4,
+    solids: (g) => [
+      groundStrip(0, 16, g),
+      plat(14, 2, 3, g),
+      plat(20, 3, 2, g),
+      groundStrip(24, 10, g),
+      plat(36, 2, 2, g),
+      plat(40, 3, 2, g),
+      plat(44, 4, 3, g),
+      plat(49, 2, 2, g),
+      groundStrip(54, 10, g),
+      block(66, 1, 3, 1, g),
+      block(68, 2, 3, 2, g),
+      block(70, 3, 3, 3, g),
+      block(72, 4, 10, 4, g),
+      plat(84, 5, 2, g),
+      groundStrip(88, 6, g),
+    ],
+    hazards: (g) => [lava(16, 8, g), lava(34, 20, g, 4), lava(64, 8, g)],
+    pickups: (g) => [heart(15, 3, g, 2), sword(45, 5, g), heart(56, 0, g, 3), heart(73, 5, g, 2)],
+    enemies: (g) => [
+      foe(8, 0, g, 3, "grunt", 70),
+      foe(12, 0, g, 1, "scout", 40),
+      foe(28, 0, g, 5, "brute", 60),
+      foe(44, 4, g, 5, "brute", 30),
+      foe(58, 0, g, 3, "grunt", 50),
+      foe(74, 4, g, 5, "brute", 40),
+      foe(90, 0, g, 5, "brute", 30),
+    ],
+  },
+  {
+    id: 10,
+    name: "Inner Sanctum",
+    theme: "castle",
+    story: "In den Hallen von Grayskull prüft die Macht deinen Mut.",
+    widthTiles: 96,
+    goalX: 92,
+    goalUp: 3,
+    solids: (g) => [
+      groundStrip(0, 10, g),
+      plat(8, 2, 2, g),
+      plat(12, 3, 2, g),
+      plat(16, 4, 2, g),
+      plat(20, 5, 3, g),
+      plat(25, 3, 2, g),
+      groundStrip(30, 8, g),
+      plat(40, 2, 2, g),
+      plat(44, 3, 2, g),
+      plat(48, 4, 2, g),
+      plat(52, 5, 2, g),
+      plat(56, 3, 3, g),
+      groundStrip(62, 8, g),
+      plat(72, 2, 2, g),
+      plat(76, 3, 2, g),
+      plat(80, 4, 3, g),
+      block(84, 1, 4, 1, g),
+      block(86, 2, 4, 2, g),
+      block(88, 3, 8, 3, g),
+    ],
+    hazards: (g) => [lava(10, 20, g, 5), lava(38, 24, g, 5), lava(70, 14, g, 4)],
+    pickups: (g) => [sword(21, 6, g), heart(31, 0, g, 3), heart(53, 6, g, 2), heart(81, 5, g, 3)],
+    enemies: (g) => [
+      foe(5, 0, g, 3, "grunt", 40),
+      foe(20, 5, g, 5, "brute", 25),
+      foe(34, 0, g, 5, "brute", 50),
+      foe(52, 5, g, 5, "brute", 20),
+      foe(65, 0, g, 3, "grunt", 50),
+      foe(80, 4, g, 5, "brute", 25),
+      foe(90, 3, g, 5, "brute", 35),
+    ],
+  },
+  {
+    id: 11,
+    name: "Throne Corridor",
+    theme: "dark",
+    story: "Vor dem Thron: die letzten Wächter. Dahinter wartet Skeletor.",
+    widthTiles: 98,
+    goalX: 94,
+    goalUp: 2,
+    solids: (g) => [
+      groundStrip(0, 14, g),
+      plat(12, 2, 2, g),
+      plat(16, 3, 3, g),
+      groundStrip(22, 8, g),
+      plat(32, 2, 2, g),
+      plat(36, 3, 2, g),
+      plat(40, 4, 2, g),
+      plat(44, 5, 3, g),
+      plat(49, 3, 2, g),
+      groundStrip(54, 10, g),
+      plat(66, 2, 2, g),
+      plat(70, 3, 2, g),
+      plat(74, 4, 2, g),
+      plat(78, 3, 2, g),
+      groundStrip(84, 14, g),
+    ],
+    hazards: (g) => [lava(14, 8, g, 4), lava(30, 24, g, 5), lava(64, 20, g, 5)],
+    pickups: (g) => [heart(13, 3, g, 3), sword(45, 6, g), heart(56, 0, g, 3), heart(75, 5, g, 2)],
+    enemies: (g) => [
+      foe(7, 0, g, 3, "grunt", 60),
+      foe(16, 3, g, 5, "brute", 30),
+      foe(26, 0, g, 5, "brute", 50),
+      foe(44, 5, g, 5, "brute", 25),
+      foe(58, 0, g, 5, "brute", 60),
+      foe(74, 4, g, 5, "brute", 20),
+      foe(88, 0, g, 5, "brute", 70),
+      foe(92, 0, g, 5, "brute", 40),
+    ],
+  },
+  {
+    id: 12,
+    name: "Snake Mountain Throne",
+    theme: "finale",
+    story: "Besiege Skeletor — nicht um ihn zu vernichten, sondern um ihn zu erlösen.",
+    widthTiles: 70,
+    goalX: 64,
+    goalUp: 2,
+    bossLevel: true,
+    requireRedeem: true,
+    solids: (g) => [
+      groundStrip(0, 20, g),
+      plat(16, 2, 3, g),
+      plat(22, 3, 2, g),
+      groundStrip(28, 14, g),
+      plat(44, 2, 3, g),
+      groundStrip(50, 20, g),
+    ],
+    hazards: (g) => [lava(20, 8, g, 4)],
+    pickups: (g) => [
+      heart(8, 0, g, 3),
+      sword(17, 3, g),
+      heart(30, 0, g, 3),
+      heart(45, 3, g, 3),
+      heart(52, 0, g, 2),
+    ],
+    enemies: (g) => [
+      foe(12, 0, g, 3, "grunt", 40),
+      foe(34, 0, g, 5, "brute", 50),
+      foe(40, 0, g, 5, "brute", 40),
+      foe(56, 0, g, 12, "skeletor", 90),
+    ],
+  },
+];
+
+export function createLevel(id = 1) {
+  const n = Math.max(1, Math.min(TOTAL_LEVELS, id | 0));
+  const def = DEFS.find((d) => d.id === n) || DEFS[0];
+  return make(def);
+}
+
+export function createLevel1() {
+  return createLevel(1);
 }
