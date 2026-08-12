@@ -345,3 +345,88 @@ kbd {
     height: 48px;
   }
 }
+
+/* Spiel-Fullscreen: nur über versteckte Ecke + X beenden */
+body.play-fullscreen {
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+body.play-fullscreen .topbar,
+body.play-fullscreen .desktop-only {
+  display: none;
+}
+
+body.play-fullscreen .app {
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  gap: 0;
+}
+
+body.play-fullscreen .stage-wrap {
+  height: 100%;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+body.play-fullscreen .touch-pad {
+  display: flex;
+}
+
+#fs-corner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: 72px;
+  height: calc(56px + var(--safe-top));
+  padding-top: var(--safe-top);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#fs-corner.holding::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 2px solid rgba(240, 193, 75, 0.35);
+  border-radius: 4px;
+  animation: fs-pulse 0.45s ease-in-out infinite alternate;
+}
+
+#fs-corner.armed {
+  width: 88px;
+  height: calc(72px + var(--safe-top));
+}
+
+.fs-close {
+  position: absolute;
+  top: calc(8px + var(--safe-top));
+  left: 8px;
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--gold);
+  background: #1a1020;
+  color: var(--gold);
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #000;
+}
+
+.fs-close:active {
+  background: #3a2040;
+}
+
+@keyframes fs-pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.9;
+  }
+}

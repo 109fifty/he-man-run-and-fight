@@ -3,6 +3,7 @@ import { Player } from "./player.js";
 import { createLevel, TOTAL_LEVELS } from "./level.js";
 import { Renderer } from "./renderer.js";
 import { aabb } from "./physics.js";
+import { FullscreenUI } from "./fullscreen.js";
 
 export class Game {
   constructor(canvas, overlay) {
@@ -12,6 +13,7 @@ export class Game {
     this.overlayText = document.getElementById("overlay-text");
     this.input = new Input();
     this.renderer = new Renderer(canvas);
+    this.fs = new FullscreenUI();
     this.state = "title"; // title | playing | dead | levelclear | campaign
     this.levelId = 1;
     this.carry = { hasSword: false, hearts: null };
@@ -29,18 +31,12 @@ export class Game {
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  /**
-   * @param {number} id
-   * @param {boolean} freshRun volle Stats (Kampagnenstart)
-   * @param {{ fullHearts?: boolean, keepSword?: boolean }} [opts]
-   */
   loadLevel(id, freshRun = false, opts = {}) {
     this.levelId = id;
     this.level = createLevel(id);
     this.player = new Player(this.level.spawn.x, this.level.spawn.y);
     const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
     if (opts.fullHearts) {
-      // volle Herzen nach Tod; Schwert behalten
       this.player.hasSword = keepSword;
     } else if (!freshRun && this.carry.hearts != null) {
       this.player.hearts = this.carry.hearts;
@@ -67,13 +63,14 @@ export class Game {
     this.overlay.classList.add("hidden");
   }
 
-  tryStart() {
+  async tryStart() {
     if (this.state === "title") {
       this.levelId = 1;
       this.carry = { hasSword: false, hearts: null };
       this.loadLevel(1, true);
       this.state = "playing";
       this.hideOverlay();
+      await this.fs.enter();
       return;
     }
     if (this.state === "dead") {
@@ -82,6 +79,7 @@ export class Game {
       this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
       this.state = "playing";
       this.hideOverlay();
+      await this.fs.enter();
       return;
     }
     if (this.state === "levelclear") {
@@ -93,6 +91,7 @@ export class Game {
       this.loadLevel(next, false);
       this.state = "playing";
       this.hideOverlay();
+      await this.fs.enter();
       return;
     }
     if (this.state === "campaign") {
@@ -101,6 +100,7 @@ export class Game {
       this.loadLevel(1, true);
       this.state = "playing";
       this.hideOverlay();
+      await this.fs.enter();
     }
   }
 
@@ -108,7 +108,6 @@ export class Game {
     return this.level.enemies.some((e) => e.redeemed || e.kind === "heroSkeletor");
   }
 
-  /** Endkampf gewonnen: alle Bosse besiegt / Skeletor erlöst */
   bossCleared() {
     const bosses = this.level.enemies.filter((e) => e.isBoss);
     if (!bosses.length) return true;
@@ -119,6 +118,15 @@ export class Game {
     return this.level.enemies.find(
       (e) => e.isBoss && e.alive && !e.redeemed && e.kind !== "heroSkeletor"
     );
+  }
+
+  /** Boss-Level: Tor erst nach Sieg, und nur per Sprung (nicht durchlaufen) */
+  canEnterGoal() {
+    if (this.level.requireBoss) {
+      if (!this.bossCleared()) return false;
+      return !this.player.onGround;
+    }
+    return true;
   }
 
   update() {
@@ -134,6 +142,7 @@ export class Game {
       }
       this.state = "playing";
       this.hideOverlay();
+      this.fs.enter();
       return;
     }
 
@@ -143,10 +152,12 @@ export class Game {
     }
 
     const { player, level } = this;
-    player.update(this.input, level.solids, level.hazards);
+    const bossSlow = !!(level.requireBoss && this.activeBoss());
+    player.update(this.input, level.solids, level.hazards, { bossSlow });
 
-    for (const e of level.enemies) e.update(level.solids);
+    for (const e of level.enemies) e.update(level.solids, player);
 
+    // Spieler-Angriff
     const hitbox = player.getHitbox();
     if (hitbox && player.attack) {
       for (const e of level.enemies) {
@@ -159,6 +170,18 @@ export class Game {
       }
     }
 
+    // Gegner-Angriffe
+    for (const e of level.enemies) {
+      if (!e.alive || e.redeemed) continue;
+      const eh = e.getHitbox();
+      if (!eh || e.attack?.hit) continue;
+      if (aabb(eh, player.hurtbox) && player.invuln <= 0) {
+        if (e.attack) e.attack.hit = true;
+        player.takeDamage(eh.damage || 1);
+      }
+    }
+
+    // Stomp / Kontakt
     for (const e of level.enemies) {
       if (!e.alive || e.redeemed) continue;
       if (!aabb(player.hurtbox, e.hurtbox)) continue;
@@ -172,8 +195,9 @@ export class Game {
         player.y = e.y - player.h;
         player.vy = -9.5;
         player.onGround = false;
-        player.invuln = Math.max(player.invuln, 8);
-      } else if (player.invuln <= 0) {
+        player.invuln = Math.max(player.invuln, 10);
+      } else if (player.invuln <= 0 && !e.attack) {
+        // Kontakt-Schaden nur wenn kein aktiver Schwung (sonst Doppel-Hit)
         player.takeDamage(1);
       }
     }
@@ -186,9 +210,7 @@ export class Game {
       if (p.kind === "sword") player.hasSword = true;
     }
 
-    const canFinish = !level.requireBoss || this.bossCleared();
-
-    if (canFinish && aabb(player.hurtbox, level.goal)) {
+    if (this.canEnterGoal() && aabb(player.hurtbox, level.goal)) {
       if (this.levelId >= TOTAL_LEVELS) {
         this.state = "campaign";
         this.showOverlay(
@@ -234,6 +256,7 @@ export class Game {
     this.last = now;
     if (frame > 100) frame = this.step;
     this.acc += frame;
+    this.fs.tick(frame);
 
     let steps = 0;
     while (this.acc >= this.step && steps < this.maxSteps) {

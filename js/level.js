@@ -64,23 +64,29 @@ function foe(x, up, groundY, hp, kind, patrol = 60, title = "") {
 
 function make(def) {
   const groundY = 14 * T;
-  const widthTiles = def.widthTiles || 78;
-  const goalX = def.goalX ?? widthTiles - 4;
+  // Level etwas länger
+  const pad = 28;
+  const baseW = def.widthTiles || 78;
+  const widthTiles = baseW + pad;
+  const goalX = (def.goalX ?? baseW - 4) + pad;
   const goalUp = def.goalUp ?? 2;
+  const solids = def.solids(groundY);
+  // Boden unter Verlängerung + Tor
+  solids.push(groundStrip(Math.max(0, baseW - 6), pad + 10, groundY));
 
   return {
     id: def.id,
     name: def.name,
     story: def.story,
     theme: def.theme || "meadow",
-    solids: def.solids(groundY),
+    solids,
     hazards: (def.hazards && def.hazards(groundY)) || [],
     pickups: (def.pickups && def.pickups(groundY)) || [],
     enemies: (def.enemies && def.enemies(groundY)) || [],
     goal: {
       x: goalX * T,
       y: groundY - goalUp * T - 110,
-      w: 32,
+      w: 36,
       h: 110,
     },
     spawn: { x: 2 * T, y: groundY - 70 },

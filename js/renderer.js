@@ -120,6 +120,10 @@ function drawEnemy(ctx, e) {
   drawPixelRect(ctx, e.x + 6, e.y + 4, 4, 4, "#ffef9a");
   drawPixelRect(ctx, e.x + e.w - 12, e.y + 4, 4, 4, "#ffef9a");
   drawPixelRect(ctx, e.x + 2, e.y + e.h - 6, e.w - 4, 6, accent);
+  if (e.attack) {
+    const ax = e.dir === 1 ? e.x + e.w - 2 : e.x - 14;
+    drawPixelRect(ctx, ax, e.y + e.h * 0.35, 16, 8, flash ? "#fff" : "#222");
+  }
 
   drawHpPips(ctx, e);
 }
@@ -155,6 +159,10 @@ function drawNamedBoss(ctx, e) {
     drawPixelRect(ctx, e.x + e.w - 8, e.y + 22, 14, 6, accent);
   }
   drawPixelRect(ctx, e.x + 2, e.y + e.h - 8, e.w - 4, 8, accent);
+  if (e.attack) {
+    const ax = e.dir === 1 ? e.x + e.w - 4 : e.x - 18;
+    drawPixelRect(ctx, ax, e.y + e.h * 0.3, 22, 10, flash ? "#fff" : accent);
+  }
 
   ctx.fillStyle = "#f0c14b";
   ctx.font = "7px 'Press Start 2P'";
@@ -320,8 +328,20 @@ export class Renderer {
     ctx.fillStyle = locked ? "#aaa" : "#f0c14b";
     ctx.font = "8px 'Press Start 2P'";
     ctx.fillText(locked ? "BOSS" : "TOR", level.goal.x + 18, level.goal.y + 20);
+    if (!locked && level.requireBoss && game.bossCleared()) {
+      ctx.fillStyle = "#9fe";
+      ctx.font = "7px 'Press Start 2P'";
+      ctx.fillText("JUMP!", level.goal.x + 14, level.goal.y + 36);
+    }
 
-    for (const e of level.enemies) drawEnemy(ctx, e);
+    for (const e of level.enemies) {
+      drawEnemy(ctx, e);
+      const eh = e.getHitbox?.();
+      if (eh) {
+        ctx.fillStyle = "rgba(220,60,60,0.4)";
+        ctx.fillRect(eh.x, eh.y, eh.w, eh.h);
+      }
+    }
     drawHeMan(ctx, player);
 
     const hb = player.getHitbox();
@@ -391,7 +411,12 @@ export class Renderer {
     } else if (level.requireBoss && game.bossCleared()) {
       ctx.fillStyle = "#f0c14b";
       ctx.font = "7px 'Press Start 2P'";
-      ctx.fillText("BOSS BESIEGT — TOR OFFEN", canvas.width / 2 - 95, 52);
+      ctx.fillText("BOSS BESIEGT — IN TOR SPRINGEN", canvas.width / 2 - 110, 52);
+    }
+    if (level.requireBoss && game.activeBoss()) {
+      ctx.fillStyle = "#9aa6c3";
+      ctx.font = "6px 'Press Start 2P'";
+      ctx.fillText("ENDKAMPF: LANGSAMER", 12, 52);
     }
   }
 }

@@ -94,7 +94,13 @@ export class Player {
     this.hearts = Math.min(this.maxHearts, this.hearts + amount);
   }
 
-  update(input, solids, hazards) {
+  /**
+   * @param {object} input
+   * @param {object[]} solids
+   * @param {object[]} hazards
+   * @param {{ bossSlow?: boolean }} [opts] Endkampf: langsamer laufen
+   */
+  update(input, solids, hazards, opts = {}) {
     if (!this.alive) {
       this.vy += GRAVITY;
       this.y += this.vy;
@@ -125,7 +131,9 @@ export class Player {
       else if (input.kick()) this.startAttack("kick");
     }
 
-    const speed = wantRun ? RUN_SPEED : WALK_SPEED;
+    // Endkampf: spürbar langsamer
+    const slow = opts.bossSlow ? 0.62 : 1;
+    const speed = (wantRun ? RUN_SPEED : WALK_SPEED) * slow;
     const canJump = this.onGround || this.coyote > 0;
 
     if (this.onGround) {
@@ -143,22 +151,21 @@ export class Player {
     } else {
       if (this.coyote > 0) this.coyote -= 1;
       if (!this.holdStill) {
-        // in der Luft weiter in Blickrichtung treiben
-        const target = this.facing * (wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED);
+        const airSpeed = (wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED) * slow;
+        const target = this.facing * airSpeed;
         this.vx += Math.sign(target - this.vx) * AIR_CONTROL;
-        const maxAir = wantRun || this.wasRunning ? RUN_SPEED : WALK_SPEED;
-        this.vx = Math.max(-maxAir, Math.min(maxAir, this.vx));
+        this.vx = Math.max(-airSpeed, Math.min(airSpeed, this.vx));
       }
       if (!this.attack) this.anim = this.vy < 0 ? "jump" : "fall";
     }
 
     if (canJump && input.jump()) {
       const runJump = this.wasRunning || wantRun;
-      this.vy = runJump ? RUN_JUMP : WALK_JUMP;
+      this.vy = (runJump ? RUN_JUMP : WALK_JUMP) * (opts.bossSlow ? 0.92 : 1);
       if (runJump) {
-        this.vx = this.facing * Math.max(Math.abs(this.vx), RUN_SPEED * 0.95);
+        this.vx = this.facing * Math.max(Math.abs(this.vx), RUN_SPEED * 0.95 * slow);
       } else if (!this.holdStill) {
-        this.vx = this.facing * Math.max(Math.abs(this.vx), WALK_SPEED);
+        this.vx = this.facing * Math.max(Math.abs(this.vx), WALK_SPEED * slow);
       }
       this.onGround = false;
       this.coyote = 0;
@@ -175,6 +182,7 @@ export class Player {
       this.wasRunning = !this.holdStill && wantRun;
     }
 
+    let hazardBounce = false;
     for (const hz of hazards) {
       if (!aabb(this.hurtbox, hz)) continue;
       this.takeDamage(hz.damage || 3);
@@ -183,7 +191,12 @@ export class Player {
         this.y = Math.min(this.y, hz.y - this.h - 4);
         const mid = hz.x + hz.w / 2;
         this.vx = this.x + this.w / 2 < mid ? -3.5 : 3.5;
+        hazardBounce = true;
       }
+    }
+    if (hazardBounce) {
+      const hit2 = resolveSolid(this, solids);
+      this.onGround = hit2.ground;
     }
 
     this.animTimer += 1;
