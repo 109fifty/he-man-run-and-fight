@@ -1,16 +1,36 @@
 /**
- * Spiel-Vollbild: Fullscreen-API + CSS-Play-Focus.
- * Schließen nur über versteckte Ecke oben links (lang halten → X).
+ * Spiel-Vollbild: sichtbares Icon zum Starten.
+ * Beenden: oben links lange halten → ✕.
  */
 export class FullscreenUI {
   constructor() {
     this.root = document.documentElement;
     this.app = document.querySelector(".app");
+    this.stage = document.querySelector(".stage-wrap");
     this.active = false;
     this.holdMs = 0;
     this.holdNeed = 900;
     this.holding = false;
     this.closeVisible = false;
+
+    this.enterBtn = document.createElement("button");
+    this.enterBtn.type = "button";
+    this.enterBtn.id = "fs-enter";
+    this.enterBtn.className = "fs-enter";
+    this.enterBtn.title = "Vollbild";
+    this.enterBtn.setAttribute("aria-label", "Vollbild starten");
+    this.enterBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path fill="currentColor" d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm16 0h2v7h-7v-2h5v-5z"/>
+      </svg>
+      <span>FULL</span>
+    `;
+    (this.stage || document.body).appendChild(this.enterBtn);
+    this.enterBtn.addEventListener("pointerup", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.enter();
+    });
 
     this.corner = document.createElement("div");
     this.corner.id = "fs-corner";
@@ -44,23 +64,33 @@ export class FullscreenUI {
     window.addEventListener("pointerup", endHold);
     window.addEventListener("pointercancel", endHold);
     document.addEventListener("fullscreenchange", () => {
-      // ESC/System darf nicht beenden — nur X nach Langhalten in der Ecke
       if (!document.fullscreenElement && this.active) {
         this._setCss(true);
       }
+      this._syncEnterBtn();
     });
+    this._syncEnterBtn();
   }
 
   async enter() {
     this.active = true;
     this._setCss(true);
     this._hideClose();
-    const el = this.app || this.root;
-    try {
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } catch (_) {
-      /* iOS/PWA: CSS-Fullscreen reicht */
+    this._syncEnterBtn();
+    const targets = [this.stage, this.app, this.root].filter(Boolean);
+    for (const el of targets) {
+      try {
+        if (el.requestFullscreen) {
+          await el.requestFullscreen({ navigationUI: "hide" });
+          break;
+        }
+        if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+          break;
+        }
+      } catch (_) {
+        /* nächstes Target / CSS-Fallback */
+      }
     }
   }
 
@@ -68,6 +98,7 @@ export class FullscreenUI {
     this.active = false;
     this._setCss(false);
     this._hideClose();
+    this._syncEnterBtn();
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
@@ -78,6 +109,11 @@ export class FullscreenUI {
 
   _setCss(on) {
     document.body.classList.toggle("play-fullscreen", on);
+  }
+
+  _syncEnterBtn() {
+    if (!this.enterBtn) return;
+    this.enterBtn.hidden = !!this.active;
   }
 
   _hideClose() {
