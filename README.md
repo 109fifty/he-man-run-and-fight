@@ -54,15 +54,15 @@ He-Man läuft von allein. Buttons: STOP, REN, Drehen, Jump, Faust, Tritt, Start,
 
 1. Eternia Outskirts  
 2. Vine Jungle  
-3. Whispering Woods  
+3. Whispering Woods — **Endkampf: Beast Man**  
 4. Crystal Caves  
 5. Ice Peaks  
-6. Desert of Lost Kings  
+6. Desert of Lost Kings — **Endkampf: Trap Jaw**  
 7. Snake Mountain Foothills  
 8. Obsidian Bridge  
-9. Grayskull Approach  
+9. Grayskull Approach — **Endkampf: Tri-Klops**  
 10. Inner Sanctum  
 11. Throne Corridor  
-12. Snake Mountain Throne — Skeletor wird zum guten Hero  
+12. Snake Mountain Throne — **Endkampf: Skeletor → wird Hero**  
 
-Mechanik: passives Laufen, Vorwärts = rennen, Kopf-Stomp, Faust/Schwert/Tritt, Lava, 15 Herzen.
+Tor öffnet erst nach Boss-Sieg. Mechanik: passives Laufen, Vorwärts = rennen, Kopf-Stomp, Faust/Schwert/Tritt.

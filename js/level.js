@@ -42,14 +42,24 @@ function sword(x, up, groundY) {
   };
 }
 
-function foe(x, up, groundY, hp, kind, patrol = 60) {
-  const h = kind === "skeletor" ? 56 : kind === "brute" ? 48 : kind === "scout" ? 32 : 40;
+function foe(x, up, groundY, hp, kind, patrol = 60, title = "") {
+  const heights = {
+    scout: 32,
+    grunt: 40,
+    brute: 48,
+    beast: 56,
+    trapjaw: 52,
+    triklops: 58,
+    skeletor: 56,
+  };
+  const h = heights[kind] || 40;
   return new Enemy({
     x: x * T,
     y: groundY - up * T - h,
     hp,
     kind,
     patrol,
+    title,
   });
 }
 
@@ -79,7 +89,9 @@ function make(def) {
     height: 18 * T,
     groundY,
     bossLevel: !!def.bossLevel,
+    requireBoss: !!def.requireBoss || !!def.requireRedeem,
     requireRedeem: !!def.requireRedeem,
+    bossTitle: def.bossTitle || "",
   };
 }
 
@@ -166,10 +178,13 @@ const DEFS = [
     id: 3,
     name: "Whispering Woods",
     theme: "jungle",
-    story: "Die Bäume flüstern Warnungen — Skeletors Späher sind nah.",
-    widthTiles: 82,
-    goalX: 78,
-    goalUp: 3,
+    story: "Endkampf: Beast Man wartet am Waldrand.",
+    widthTiles: 96,
+    goalX: 92,
+    goalUp: 2,
+    bossLevel: true,
+    requireBoss: true,
+    bossTitle: "BEAST MAN",
     solids: (g) => [
       groundStrip(0, 16, g),
       plat(14, 2, 2, g),
@@ -180,13 +195,21 @@ const DEFS = [
       plat(40, 4, 2, g),
       plat(44, 5, 3, g),
       plat(49, 3, 2, g),
-      groundStrip(54, 12, g),
-      block(66, 1, 3, 1, g),
-      block(68, 2, 3, 2, g),
-      block(70, 3, 8, 3, g),
+      groundStrip(54, 10, g),
+      // Übergang zur Arena
+      plat(66, 2, 2, g),
+      plat(70, 2, 2, g),
+      // Boss-Arena
+      groundStrip(74, 22, g),
     ],
-    hazards: (g) => [lava(16, 12, g), lava(34, 20, g, 4)],
-    pickups: (g) => [heart(15, 3, g), heart(41, 5, g, 3), sword(45, 6, g), heart(71, 4, g, 2)],
+    hazards: (g) => [lava(16, 12, g), lava(34, 20, g, 4), lava(64, 10, g, 3)],
+    pickups: (g) => [
+      heart(15, 3, g),
+      heart(41, 5, g, 3),
+      sword(45, 6, g),
+      heart(58, 0, g, 2),
+      heart(76, 0, g, 3),
+    ],
     enemies: (g) => [
       foe(8, 0, g, 1, "scout", 80),
       foe(12, 0, g, 1, "scout", 40),
@@ -194,7 +217,7 @@ const DEFS = [
       foe(30, 0, g, 3, "grunt", 50),
       foe(44, 5, g, 5, "brute", 25),
       foe(58, 0, g, 3, "grunt", 70),
-      foe(72, 3, g, 5, "brute", 40),
+      foe(82, 0, g, 8, "beast", 140, "Beast Man"),
     ],
   },
   {
@@ -275,10 +298,13 @@ const DEFS = [
     id: 6,
     name: "Desert of Lost Kings",
     theme: "desert",
-    story: "Hitze, Ruinen und Wächter aus Sandstein.",
-    widthTiles: 88,
-    goalX: 84,
+    story: "Endkampf: Trap Jaw lauert in den Ruinen.",
+    widthTiles: 102,
+    goalX: 98,
     goalUp: 2,
+    bossLevel: true,
+    requireBoss: true,
+    bossTitle: "TRAP JAW",
     solids: (g) => [
       groundStrip(0, 20, g),
       plat(18, 2, 3, g),
@@ -291,10 +317,19 @@ const DEFS = [
       plat(64, 2, 2, g),
       plat(68, 3, 3, g),
       plat(73, 2, 2, g),
-      groundStrip(78, 10, g),
+      groundStrip(78, 6, g),
+      plat(86, 2, 2, g),
+      // Boss-Arena
+      groundStrip(90, 12, g),
     ],
-    hazards: (g) => [lava(20, 8, g, 3), lava(36, 16, g, 4), lava(62, 16, g, 4)],
-    pickups: (g) => [heart(19, 3, g), sword(47, 5, g), heart(55, 0, g, 3), heart(69, 4, g, 2)],
+    hazards: (g) => [lava(20, 8, g, 3), lava(36, 16, g, 4), lava(62, 16, g, 4), lava(84, 6, g, 4)],
+    pickups: (g) => [
+      heart(19, 3, g),
+      sword(47, 5, g),
+      heart(55, 0, g, 3),
+      heart(69, 4, g, 2),
+      heart(92, 0, g, 3),
+    ],
     enemies: (g) => [
       foe(8, 0, g, 1, "scout", 90),
       foe(14, 0, g, 3, "grunt", 70),
@@ -302,7 +337,8 @@ const DEFS = [
       foe(46, 4, g, 5, "brute", 40),
       foe(58, 0, g, 1, "scout", 60),
       foe(68, 3, g, 5, "brute", 30),
-      foe(82, 0, g, 3, "grunt", 40),
+      foe(80, 0, g, 3, "grunt", 40),
+      foe(95, 0, g, 10, "trapjaw", 160, "Trap Jaw"),
     ],
   },
   {
@@ -386,10 +422,13 @@ const DEFS = [
     id: 9,
     name: "Grayskull Approach",
     theme: "castle",
-    story: "Das Schloss ruft — aber der Weg ist von Skeletors Elite bewacht.",
-    widthTiles: 94,
-    goalX: 90,
-    goalUp: 4,
+    story: "Endkampf: Tri-Klops bewacht den Zugang.",
+    widthTiles: 108,
+    goalX: 104,
+    goalUp: 2,
+    bossLevel: true,
+    requireBoss: true,
+    bossTitle: "TRI-KLOPS",
     solids: (g) => [
       groundStrip(0, 16, g),
       plat(14, 2, 3, g),
@@ -403,12 +442,20 @@ const DEFS = [
       block(66, 1, 3, 1, g),
       block(68, 2, 3, 2, g),
       block(70, 3, 3, 3, g),
-      block(72, 4, 10, 4, g),
-      plat(84, 5, 2, g),
-      groundStrip(88, 6, g),
+      block(72, 4, 8, 4, g),
+      plat(82, 3, 2, g),
+      plat(86, 2, 2, g),
+      // Boss-Arena
+      groundStrip(90, 18, g),
     ],
-    hazards: (g) => [lava(16, 8, g), lava(34, 20, g, 4), lava(64, 8, g)],
-    pickups: (g) => [heart(15, 3, g, 2), sword(45, 5, g), heart(56, 0, g, 3), heart(73, 5, g, 2)],
+    hazards: (g) => [lava(16, 8, g), lava(34, 20, g, 4), lava(64, 8, g), lava(80, 10, g, 4)],
+    pickups: (g) => [
+      heart(15, 3, g, 2),
+      sword(45, 5, g),
+      heart(56, 0, g, 3),
+      heart(73, 5, g, 2),
+      heart(92, 0, g, 3),
+    ],
     enemies: (g) => [
       foe(8, 0, g, 3, "grunt", 70),
       foe(12, 0, g, 1, "scout", 40),
@@ -416,7 +463,7 @@ const DEFS = [
       foe(44, 4, g, 5, "brute", 30),
       foe(58, 0, g, 3, "grunt", 50),
       foe(74, 4, g, 5, "brute", 40),
-      foe(90, 0, g, 5, "brute", 30),
+      foe(96, 0, g, 12, "triklops", 180, "Tri-Klops"),
     ],
   },
   {
@@ -502,12 +549,14 @@ const DEFS = [
     id: 12,
     name: "Snake Mountain Throne",
     theme: "finale",
-    story: "Besiege Skeletor — nicht um ihn zu vernichten, sondern um ihn zu erlösen.",
+    story: "Endkampf: Skeletor — besiege ihn, damit er zum guten Hero wird.",
     widthTiles: 70,
     goalX: 64,
     goalUp: 2,
     bossLevel: true,
+    requireBoss: true,
     requireRedeem: true,
+    bossTitle: "SKELETOR",
     solids: (g) => [
       groundStrip(0, 20, g),
       plat(16, 2, 3, g),
@@ -528,7 +577,7 @@ const DEFS = [
       foe(12, 0, g, 3, "grunt", 40),
       foe(34, 0, g, 5, "brute", 50),
       foe(40, 0, g, 5, "brute", 40),
-      foe(56, 0, g, 12, "skeletor", 90),
+      foe(56, 0, g, 12, "skeletor", 90, "Skeletor"),
     ],
   },
 ];

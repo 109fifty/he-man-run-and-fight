@@ -6,12 +6,15 @@ const KIND = {
   scout: { w: 24, h: 32, speed: 1.4 },
   grunt: { w: 30, h: 40, speed: 1.0 },
   brute: { w: 36, h: 48, speed: 0.7 },
-  skeletor: { w: 40, h: 56, speed: 1.1 },
+  beast: { w: 48, h: 56, speed: 1.35 }, // Boss L3
+  trapjaw: { w: 46, h: 52, speed: 1.5 }, // Boss L6
+  triklops: { w: 50, h: 58, speed: 1.2 }, // Boss L9
+  skeletor: { w: 40, h: 56, speed: 1.1 }, // Boss L12
   heroSkeletor: { w: 40, h: 56, speed: 0 },
 };
 
 export class Enemy {
-  constructor({ x, y, hp, kind = "grunt", patrol = 80 }) {
+  constructor({ x, y, hp, kind = "grunt", patrol = 80, isBoss = false, title = "" }) {
     const k = KIND[kind] || KIND.grunt;
     this.x = x;
     this.y = y;
@@ -32,6 +35,10 @@ export class Enemy {
     this.turnCooldown = 0;
     this.stun = 0;
     this.redeemed = false;
+    this.isBoss =
+      isBoss ||
+      ["beast", "trapjaw", "triklops", "skeletor"].includes(kind);
+    this.title = title;
     this.id = `${kind}-${x}-${y}-${Math.random().toString(36).slice(2, 7)}`;
   }
 
@@ -43,11 +50,10 @@ export class Enemy {
     if (!this.alive || this.redeemed) return false;
     this.hp -= damage;
     this.hitFlash = 10;
-    this.stun = this.kind === "skeletor" ? 10 : 18;
+    this.stun = this.isBoss ? 8 : 18;
     this.vx = 0;
     if (this.hp <= 0) {
       if (this.kind === "skeletor") {
-        // Wird zum guten Hero — bleibt stehen, nicht „tot“
         this.redeemed = true;
         this.kind = "heroSkeletor";
         this.hp = 0;
@@ -62,6 +68,8 @@ export class Enemy {
   }
 
   speed() {
+    // Bosses etwas schneller, wenn unter 50% HP
+    if (this.isBoss && this.hp <= this.maxHp * 0.5) return this.baseSpeed * 1.25;
     return this.baseSpeed;
   }
 
@@ -83,7 +91,7 @@ export class Enemy {
     const turn = () => {
       if (this.turnCooldown > 0) return;
       this.dir *= -1;
-      this.turnCooldown = 16;
+      this.turnCooldown = this.isBoss ? 10 : 16;
       this.originX = this.x;
     };
 

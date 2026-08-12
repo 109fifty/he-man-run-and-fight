@@ -84,6 +84,11 @@ function drawEnemy(ctx, e) {
     return;
   }
 
+  if (e.kind === "beast" || e.kind === "trapjaw" || e.kind === "triklops") {
+    drawNamedBoss(ctx, e);
+    return;
+  }
+
   const flash = e.hitFlash > 0;
   const body =
     e.kind === "brute"
@@ -107,14 +112,50 @@ function drawEnemy(ctx, e) {
 
   const pips = Math.min(e.maxHp, 12);
   for (let i = 0; i < pips; i++) {
-    drawPixelRect(
-      ctx,
-      e.x + i * 5,
-      e.y - 8,
-      4,
-      4,
-      i < e.hp ? "#e74c3c" : "#333"
-    );
+    drawPixelRect(ctx, e.x + i * 5, e.y - 8, 4, 4, i < e.hp ? "#e74c3c" : "#333");
+  }
+}
+
+function drawNamedBoss(ctx, e) {
+  const flash = e.hitFlash > 0;
+  let body = "#888";
+  let accent = "#222";
+  let head = "#caa";
+  if (e.kind === "beast") {
+    body = flash ? "#fff" : "#8b4513";
+    accent = "#5a2a0a";
+    head = "#c48a4a";
+  } else if (e.kind === "trapjaw") {
+    body = flash ? "#fff" : "#5a6670";
+    accent = "#c0392b";
+    head = "#8a949c";
+  } else if (e.kind === "triklops") {
+    body = flash ? "#fff" : "#2d6b3a";
+    accent = "#c9a227";
+    head = "#3d8b4a";
+  }
+
+  drawPixelRect(ctx, e.x + 2, e.y + 12, e.w - 4, e.h - 14, body);
+  drawPixelRect(ctx, e.x + 6, e.y, e.w - 12, 16, head);
+  if (e.kind === "triklops") {
+    drawPixelRect(ctx, e.x + e.w / 2 - 3, e.y + 5, 6, 6, "#e74c3c");
+  } else {
+    drawPixelRect(ctx, e.x + 10, e.y + 5, 4, 4, "#ffef9a");
+    drawPixelRect(ctx, e.x + e.w - 14, e.y + 5, 4, 4, "#ffef9a");
+  }
+  if (e.kind === "trapjaw") {
+    drawPixelRect(ctx, e.x + e.w - 8, e.y + 22, 14, 6, accent);
+  }
+  drawPixelRect(ctx, e.x + 2, e.y + e.h - 8, e.w - 4, 8, accent);
+
+  ctx.fillStyle = "#f0c14b";
+  ctx.font = "7px 'Press Start 2P'";
+  const label = (e.title || e.kind).toUpperCase();
+  ctx.fillText(label, e.x, e.y - 14);
+
+  const pips = Math.min(e.maxHp, 12);
+  for (let i = 0; i < pips; i++) {
+    drawPixelRect(ctx, e.x + i * 5, e.y - 8, 4, 4, i < e.hp ? "#e74c3c" : "#333");
   }
 }
 
@@ -244,7 +285,7 @@ export class Renderer {
       if (p.kind === "sword") drawSwordPickup(ctx, p.x, p.y, this.time);
     }
 
-    const locked = level.requireRedeem && !game.skeletorRedeemed();
+    const locked = level.requireBoss && !game.bossCleared();
     drawPixelRect(ctx, level.goal.x + 10, level.goal.y, 6, level.goal.h, locked ? "#666" : "#c9a227");
     drawPixelRect(
       ctx,
@@ -256,7 +297,7 @@ export class Renderer {
     );
     ctx.fillStyle = locked ? "#aaa" : "#f0c14b";
     ctx.font = "8px 'Press Start 2P'";
-    ctx.fillText(locked ? "???" : "TOR", level.goal.x + 18, level.goal.y + 20);
+    ctx.fillText(locked ? "BOSS" : "TOR", level.goal.x + 18, level.goal.y + 20);
 
     for (const e of level.enemies) drawEnemy(ctx, e);
     drawHeMan(ctx, player);
@@ -309,14 +350,26 @@ export class Renderer {
     ctx.font = "8px 'Press Start 2P'";
     ctx.fillText(player.hasSword ? "SCHWERT" : "FAUST", canvas.width / 2 - 30, 24);
 
-    if (level.requireRedeem && !game.skeletorRedeemed()) {
+    if (level.requireBoss && !game.bossCleared()) {
+      const boss = game.activeBoss();
+      const name = (boss && (boss.title || level.bossTitle)) || level.bossTitle || "BOSS";
       ctx.fillStyle = "#e74c3c";
       ctx.font = "7px 'Press Start 2P'";
-      ctx.fillText("BESIEGE SKELETOR", canvas.width / 2 - 70, 52);
+      ctx.fillText(`ENDKAMPF: ${String(name).toUpperCase()}`, canvas.width / 2 - 100, 52);
+      if (boss) {
+        const barW = 200;
+        const bx = canvas.width / 2 - barW / 2;
+        drawPixelRect(ctx, bx, 58, barW, 8, "#333");
+        drawPixelRect(ctx, bx, 58, Math.max(0, (boss.hp / boss.maxHp) * barW), 8, "#e74c3c");
+      }
     } else if (level.requireRedeem && game.skeletorRedeemed()) {
       ctx.fillStyle = "#f0c14b";
       ctx.font = "7px 'Press Start 2P'";
       ctx.fillText("SKELETOR IST EIN HERO!", canvas.width / 2 - 90, 52);
+    } else if (level.requireBoss && game.bossCleared()) {
+      ctx.fillStyle = "#f0c14b";
+      ctx.font = "7px 'Press Start 2P'";
+      ctx.fillText("BOSS BESIEGT — TOR OFFEN", canvas.width / 2 - 95, 52);
     }
   }
 }

@@ -99,6 +99,19 @@ export class Game {
     return this.level.enemies.some((e) => e.redeemed || e.kind === "heroSkeletor");
   }
 
+  /** Endkampf gewonnen: alle Bosse besiegt / Skeletor erlöst */
+  bossCleared() {
+    const bosses = this.level.enemies.filter((e) => e.isBoss);
+    if (!bosses.length) return true;
+    return bosses.every((e) => !e.alive || e.redeemed || e.kind === "heroSkeletor");
+  }
+
+  activeBoss() {
+    return this.level.enemies.find(
+      (e) => e.isBoss && e.alive && !e.redeemed && e.kind !== "heroSkeletor"
+    );
+  }
+
   update() {
     if (this.input.restart()) {
       if (this.state === "campaign") {
@@ -154,11 +167,6 @@ export class Game {
       }
     }
 
-    if (level.requireRedeem && this.skeletorRedeemed() && !this._redeemShown) {
-      this._redeemShown = true;
-      // kurze Story-Einblendung ohne Pause des Levels — Tor wird freigeschaltet
-    }
-
     for (const p of level.pickups) {
       if (p.taken) continue;
       if (!aabb(player.hurtbox, p)) continue;
@@ -167,21 +175,23 @@ export class Game {
       if (p.kind === "sword") player.hasSword = true;
     }
 
-    const canFinish =
-      !level.requireRedeem || this.skeletorRedeemed();
+    const canFinish = !level.requireBoss || this.bossCleared();
 
     if (canFinish && aabb(player.hurtbox, level.goal)) {
       if (this.levelId >= TOTAL_LEVELS) {
         this.state = "campaign";
         this.showOverlay(
           "Skeletor ist ein Hero!",
-          "Durch deine Stärke fand er das Licht. Alle 12 Level geschafft. Tippe START für ein neues Abenteuer."
+          "Durch deine Stärke fand er das Licht. Alle 12 Level + Endkämpfe geschafft. Tippe START."
         );
       } else {
+        const bossNote = level.bossLevel
+          ? ` Endkampf gegen ${level.bossTitle || "den Boss"} gewonnen!`
+          : "";
         this.state = "levelclear";
         this.showOverlay(
           `Level ${this.levelId} geschafft!`,
-          `${level.name} — als Nächstes: Level ${this.levelId + 1}. Tippe START.`
+          `${level.name}.${bossNote} Weiter zu Level ${this.levelId + 1}. Tippe START.`
         );
       }
     }
