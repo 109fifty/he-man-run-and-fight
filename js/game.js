@@ -26,22 +26,29 @@ export class Game {
     this.step = 1000 / 60;
     this.maxSteps = 5;
     this.running = true;
-    this._redeemShown = false;
     requestAnimationFrame((t) => this.loop(t));
   }
 
-  loadLevel(id, freshRun = false) {
+  /**
+   * @param {number} id
+   * @param {boolean} freshRun volle Stats (Kampagnenstart)
+   * @param {{ fullHearts?: boolean, keepSword?: boolean }} [opts]
+   */
+  loadLevel(id, freshRun = false, opts = {}) {
     this.levelId = id;
     this.level = createLevel(id);
     this.player = new Player(this.level.spawn.x, this.level.spawn.y);
-    if (!freshRun && this.carry.hearts != null) {
+    const keepSword = !!(opts.keepSword || (!freshRun && this.carry.hasSword));
+    if (opts.fullHearts) {
+      // volle Herzen nach Tod; Schwert behalten
+      this.player.hasSword = keepSword;
+    } else if (!freshRun && this.carry.hearts != null) {
       this.player.hearts = this.carry.hearts;
       this.player.hasSword = this.carry.hasSword;
-    } else if (!freshRun && this.carry.hasSword) {
+    } else if (keepSword) {
       this.player.hasSword = true;
     }
     this.renderer.camX = 0;
-    this._redeemShown = false;
     this.updateTagline();
   }
 
@@ -70,7 +77,9 @@ export class Game {
       return;
     }
     if (this.state === "dead") {
-      this.loadLevel(this.levelId, false);
+      const sword = this.player.hasSword || this.carry.hasSword;
+      this.carry.hasSword = sword;
+      this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
       this.state = "playing";
       this.hideOverlay();
       return;
@@ -114,12 +123,14 @@ export class Game {
 
   update() {
     if (this.input.restart()) {
-      if (this.state === "campaign") {
+      if (this.state === "campaign" || this.state === "title") {
         this.levelId = 1;
         this.carry = { hasSword: false, hearts: null };
         this.loadLevel(1, true);
       } else {
-        this.loadLevel(this.levelId, false);
+        const sword = this.player?.hasSword || this.carry.hasSword;
+        this.carry.hasSword = sword;
+        this.loadLevel(this.levelId, false, { fullHearts: true, keepSword: sword });
       }
       this.state = "playing";
       this.hideOverlay();

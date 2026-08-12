@@ -99,7 +99,7 @@ function make(def) {
  * Schwierigkeit steigt mit Level-ID. Lava nur Level 12.
  */
 const DEFS = [
-  // 1 — Wiese, sehr leicht
+  // 1 — Wiese, sehr leicht (durchgehender Boden, keine Todesgruben)
   {
     id: 1,
     name: "Sunny Meadow",
@@ -109,36 +109,32 @@ const DEFS = [
     goalX: 48,
     goalUp: 1,
     solids: (g) => [
-      groundStrip(0, 22, g),
-      plat(18, 2, 3, g),
-      groundStrip(24, 14, g),
-      plat(34, 2, 3, g),
-      groundStrip(40, 12, g),
+      groundStrip(0, 52, g),
+      plat(14, 2, 3, g),
+      plat(28, 2, 3, g),
+      plat(38, 2, 2, g),
     ],
     hazards: () => [],
-    pickups: (g) => [heart(10, 0, g, 2), heart(20, 3, g, 2), heart(36, 3, g, 3)],
-    enemies: (g) => [foe(14, 0, g, 1, "scout", 40), foe(30, 0, g, 1, "scout", 50)],
+    pickups: (g) => [heart(10, 0, g, 2), heart(16, 3, g, 2), heart(30, 3, g, 3)],
+    enemies: (g) => [foe(18, 0, g, 1, "scout", 40), foe(34, 0, g, 1, "scout", 50)],
   },
 
-  // 2 — Forest, leicht
+  // 2 — Forest, leicht (durchgehender Boden + optionale Hochpfade)
   {
     id: 2,
     name: "Green Forest",
     theme: "forest",
-    story: "Erste Wurzeln und kleine Lücken zwischen den Pfaden.",
+    story: "Erste Wurzeln — der Boden bleibt sicher, oben gibt’s Abkürzungen.",
     widthTiles: 64,
     goalX: 60,
     goalUp: 2,
     solids: (g) => [
-      groundStrip(0, 14, g),
+      groundStrip(0, 64, g),
       plat(12, 2, 3, g),
       plat(17, 3, 2, g),
-      groundStrip(22, 10, g),
       plat(34, 2, 2, g),
       plat(38, 3, 3, g),
-      groundStrip(44, 12, g),
       plat(52, 2, 3, g),
-      groundStrip(56, 8, g),
     ],
     hazards: () => [],
     pickups: (g) => [heart(13, 3, g, 2), sword(39, 4, g), heart(53, 3, g, 2)],
@@ -150,7 +146,7 @@ const DEFS = [
     ],
   },
 
-  // 3 — Forest + Boss Beast Man
+  // 3 — Forest + Boss Beast Man (sicherer Weg bis zur Arena)
   {
     id: 3,
     name: "Deep Forest",
@@ -163,17 +159,14 @@ const DEFS = [
     requireBoss: true,
     bossTitle: "BEAST MAN",
     solids: (g) => [
-      groundStrip(0, 12, g),
+      groundStrip(0, 88, g),
       plat(10, 2, 2, g),
       plat(14, 3, 2, g),
       plat(18, 2, 3, g),
-      groundStrip(24, 8, g),
       plat(34, 3, 2, g),
       plat(38, 4, 3, g),
-      groundStrip(44, 10, g),
       plat(56, 2, 2, g),
       plat(60, 2, 2, g),
-      groundStrip(66, 22, g),
     ],
     hazards: () => [],
     pickups: (g) => [

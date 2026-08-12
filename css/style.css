@@ -220,6 +220,14 @@ kbd {
   font-size: 11px;
 }
 
+.pad-btn.forward {
+  width: 72px;
+  height: 64px;
+  background: rgba(60, 120, 90, 0.45);
+  border-color: rgba(80, 200, 140, 0.7);
+  font-size: 11px;
+}
+
 .pad-btn.ghost {
   width: 52px;
   height: 40px;

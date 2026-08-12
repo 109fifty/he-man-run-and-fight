@@ -3,6 +3,16 @@ function drawPixelRect(ctx, x, y, w, h, color) {
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
 }
 
+/** HP-Pips für alle Gegner inkl. Bosse mit >12 HP */
+function drawHpPips(ctx, e, yOff = -8) {
+  const n = e.maxHp;
+  const gap = n > 12 ? 4 : 5;
+  const pipW = n > 12 ? 3 : 4;
+  for (let i = 0; i < n; i++) {
+    drawPixelRect(ctx, e.x + i * gap, e.y + yOff, pipW, 4, i < e.hp ? "#e74c3c" : "#333");
+  }
+}
+
 const THEMES = {
   meadow: { top: "#87b7e8", mid: "#a8d48a", bot: "#6aaa3a", mount: "#7a9a50", grass: "#5dba3a", stone: "#8a9a6a" },
   forest: { top: "#0f2a1c", mid: "#1f5a38", bot: "#3a4a20", mount: "#164a30", grass: "#2ecc71", stone: "#4a6a40" },
@@ -111,10 +121,7 @@ function drawEnemy(ctx, e) {
   drawPixelRect(ctx, e.x + e.w - 12, e.y + 4, 4, 4, "#ffef9a");
   drawPixelRect(ctx, e.x + 2, e.y + e.h - 6, e.w - 4, 6, accent);
 
-  const pips = Math.min(e.maxHp, 12);
-  for (let i = 0; i < pips; i++) {
-    drawPixelRect(ctx, e.x + i * 5, e.y - 8, 4, 4, i < e.hp ? "#e74c3c" : "#333");
-  }
+  drawHpPips(ctx, e);
 }
 
 function drawNamedBoss(ctx, e) {
@@ -154,10 +161,7 @@ function drawNamedBoss(ctx, e) {
   const label = (e.title || e.kind).toUpperCase();
   ctx.fillText(label, e.x, e.y - 14);
 
-  const pips = Math.min(e.maxHp, 12);
-  for (let i = 0; i < pips; i++) {
-    drawPixelRect(ctx, e.x + i * 5, e.y - 8, 4, 4, i < e.hp ? "#e74c3c" : "#333");
-  }
+  drawHpPips(ctx, e);
 }
 
 function drawSkeletor(ctx, e) {
@@ -179,10 +183,7 @@ function drawSkeletor(ctx, e) {
   }
 
   if (!hero) {
-    const pips = Math.min(e.maxHp, 12);
-    for (let i = 0; i < pips; i++) {
-      drawPixelRect(ctx, e.x + i * 5, e.y - 10, 4, 4, i < e.hp ? "#e74c3c" : "#333");
-    }
+    drawHpPips(ctx, e, -10);
   } else {
     ctx.fillStyle = "#f0c14b";
     ctx.font = "7px 'Press Start 2P'";
