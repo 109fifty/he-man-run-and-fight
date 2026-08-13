@@ -38,22 +38,21 @@
         <div id="overlay" class="overlay">
           <div class="overlay-card">
             <h2 id="overlay-title">By the power of Grayskull!</h2>
-            <p id="overlay-text">
-              STUFE 1 = Jump &amp; Run · STUFE 2 = Flugkampf — beide sofort wählbar. Schwierigkeit: Anfänger 15♥ / Fortgeschritten 10♥ / Profi 5♥.
-            </p>
+            <p class="stage-label">Kampagne wählen</p>
+            <div class="stage-pick">
+              <button type="button" class="stage-btn" id="btn-stage1" data-stage="1">STUFE 1<br /><span>Jump &amp; Run</span></button>
+              <button type="button" class="stage-btn stage-btn-2" id="btn-stage2" data-stage="2">STUFE 2<br /><span>Flugkampf</span></button>
+            </div>
+            <p class="stage-label">Schwierigkeit</p>
             <div class="diff-pick" role="group" aria-label="Schwierigkeit">
               <button type="button" class="diff-btn" data-diff="easy">ANFÄNGER<br /><span>15♥</span></button>
               <button type="button" class="diff-btn" data-diff="normal">FORTGESCHRITTEN<br /><span>10♥</span></button>
               <button type="button" class="diff-btn" data-diff="hard">PROFI<br /><span>5♥</span></button>
             </div>
-            <div class="stage-pick">
-              <button type="button" class="stage-btn" id="btn-stage1" data-stage="1">STUFE 1</button>
-              <button type="button" class="stage-btn" id="btn-stage2" data-stage="2">STUFE 2</button>
-            </div>
-            <p class="hint">Schwierigkeit wählen · Stufe tippen · FULL = Vollbild</p>
-            <p class="install-hint">
-              iPad: Safari → Teilen → <strong>Zum Home-Bildschirm</strong>
+            <p id="overlay-text" class="overlay-note">
+              Tippe STUFE 1 oder STUFE 2. FULL = Vollbild.
             </p>
+            <p class="hint">Tippen zum Start</p>
           </div>
         </div>
 
@@ -86,11 +85,15 @@
       </aside>
     </div>
 
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/main.js?v=14"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js").catch(() => {});
+          navigator.serviceWorker.getRegistrations().then((regs) => {
+            Promise.all(regs.map((r) => r.update())).finally(() => {
+              navigator.serviceWorker.register("./sw.js?v=14").catch(() => {});
+            });
+          });
         });
       }
     </script>
