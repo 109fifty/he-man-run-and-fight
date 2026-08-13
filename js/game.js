@@ -44,6 +44,7 @@ export class Game {
     this._bindStageButtons();
     this._bindDiffButtons();
     this._refreshTitleUi();
+    this._syncMenuChrome();
     this.last = 0;
     this.acc = 0;
     this.step = 1000 / 60;
@@ -164,6 +165,14 @@ export class Game {
     if (!arena) return;
     const hearts = this.ship ? this.ship.hearts : this.player.hearts;
     const sword = this.ship ? this.ship.hasSword : this.player.hasSword;
+    if (!hearts || hearts <= 0) {
+      this.state = "dead";
+      this.showOverlay(
+        "Schiff abgeschossen…",
+        `Stufe 2 · Level ${this.levelId}: ${this.level.name}. Tippe START oder R.`
+      );
+      return;
+    }
     const d = this.diffOpts();
     this.level = {
       ...this.level,
@@ -203,10 +212,20 @@ export class Game {
     this.overlayTitle.textContent = title;
     this.overlayText.textContent = text;
     this.overlay.classList.remove("hidden");
+    this._syncMenuChrome();
   }
 
   hideOverlay() {
     this.overlay.classList.add("hidden");
+    this._syncMenuChrome();
+  }
+
+  _syncMenuChrome() {
+    const menu =
+      this.state === "title" || this.state === "campaign" || this.state === "stageclear";
+    document.body.classList.toggle("overlay-menu", menu && !this.overlay.classList.contains("hidden"));
+    document.body.classList.toggle("overlay-open", !this.overlay.classList.contains("hidden"));
+    this.fs?._syncEnterBtn?.();
   }
 
   async startStage(stage) {
@@ -221,10 +240,12 @@ export class Game {
 
   async tryStart() {
     if (this.state === "title") {
+      this.input.endFrame();
       await this.startStage(this.pendingStage || 1);
       return;
     }
     if (this.state === "dead") {
+      this.input.endFrame();
       const sword =
         this.player?.hasSword || this.ship?.hasSword || this.carry.hasSword;
       this.carry.hasSword = sword;
@@ -313,17 +334,9 @@ export class Game {
 
   updateFlight() {
     const { ship, flight, level } = this;
-    ship.update(this.input, flight);
-    flight.update(ship);
-
-    if (level.bossTrigger && ship.x >= level.bossTrigger) {
-      this.enterArena();
-      return;
-    }
-
-    if (!level.bossLevel && aabb(ship.hurtbox, level.goal)) {
-      this.clearLevel();
-      return;
+    if (ship.alive) {
+      ship.update(this.input, flight);
+      flight.update(ship);
     }
 
     if (!ship.alive && this.state === "playing") {
@@ -332,6 +345,16 @@ export class Game {
         "Schiff abgeschossen…",
         `Stufe 2 · Level ${this.levelId}: ${level.name}. Tippe START oder R.`
       );
+      return;
+    }
+
+    if (level.bossTrigger && ship.alive && ship.hearts > 0 && ship.x >= level.bossTrigger) {
+      this.enterArena();
+      return;
+    }
+
+    if (!level.bossLevel && ship.alive && aabb(ship.hurtbox, level.goal)) {
+      this.clearLevel();
     }
   }
 

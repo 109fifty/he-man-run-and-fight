@@ -232,6 +232,17 @@ body {
   display: none !important;
 }
 
+/* Während Tod/Weiter: nur Text, keine Menü-Buttons */
+body.overlay-open:not(.overlay-menu) .stage-pick,
+body.overlay-open:not(.overlay-menu) .diff-pick,
+body.overlay-open:not(.overlay-menu) .stage-label {
+  display: none !important;
+}
+
+body.overlay-open .fs-enter {
+  display: none !important;
+}
+
 .flight-only {
   display: none !important;
 }

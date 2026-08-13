@@ -1,4 +1,4 @@
-const CACHE = "heman-v14";
+const CACHE = "heman-v15";
 const ASSETS = [
   "./",
   "./index.html",
@@ -38,8 +38,38 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isNav = req.mode === "navigate";
+  const isCode =
+    sameOrigin &&
+    (url.pathname.endsWith(".html") ||
+      url.pathname.endsWith(".js") ||
+      url.pathname.endsWith(".css") ||
+      url.pathname.endsWith("/") ||
+      url.pathname.endsWith("webmanifest"));
+
+  // HTML/JS/CSS: network-first, damit iPad nicht auf altem Stand hängt
+  if (isNav || isCode) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() =>
+          caches.match(req, { ignoreSearch: true }).then((cached) => cached || caches.match("./index.html"))
+        )
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(req, { ignoreSearch: true }).then((cached) => {
       const fetched = fetch(req)
         .then((res) => {
           if (res && res.ok) {

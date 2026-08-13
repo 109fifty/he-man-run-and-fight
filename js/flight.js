@@ -169,7 +169,7 @@ export class FlightSim {
         const dx = h.x + h.w / 2 - (ship.x + ship.w / 2);
         const dy = h.y + h.h / 2 - (ship.y + ship.h / 2);
         const dist = Math.hypot(dx, dy) || 1;
-        if (dist < 120) {
+        if (ship.alive && dist < 120) {
           ship.x += (dx / dist) * h.pull;
           ship.y += (dy / dist) * h.pull;
           const top = this.level.corridor.top;

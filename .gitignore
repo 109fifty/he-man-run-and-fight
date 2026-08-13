@@ -3,7 +3,7 @@ _site/
 *.log
 .idea/
 .vscode/
-.github/workflows/
 dist/**/* [0-9].*
 dist/**/* [0-9].*/**
 dist/he-man-ipad/
+.github/workflows/

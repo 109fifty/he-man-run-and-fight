@@ -113,7 +113,8 @@ export class FullscreenUI {
 
   _syncEnterBtn() {
     if (!this.enterBtn) return;
-    this.enterBtn.hidden = !!this.active;
+    const overlayOpen = document.body.classList.contains("overlay-open");
+    this.enterBtn.hidden = !!this.active || overlayOpen;
   }
 
   _hideClose() {
