@@ -269,6 +269,24 @@ body.mode-run span.flight-only {
   display: none !important;
 }
 
+.dpad-spacer {
+  width: 58px;
+  height: 58px;
+  grid-column: 2;
+  grid-row: 3;
+}
+
+body.mode-run .dpad-up.run-only {
+  display: flex !important;
+}
+
+body.mode-flight .dpad-up.flight-only,
+body.mode-flight .dpad-down.flight-only {
+  display: flex !important;
+  visibility: visible;
+  pointer-events: auto;
+}
+
 .controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -315,24 +333,60 @@ kbd {
   pointer-events: auto;
 }
 
-.touch-mid {
+/* Steuerkreuz: ▲ / ◀ STOP ▶ / ▼ */
+.dpad {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 58px 58px 58px;
+  grid-template-rows: 58px 58px 58px;
+  gap: 6px;
+  align-items: center;
+  justify-items: center;
+}
+
+.dpad-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-stop {
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 8px;
+  background: rgba(180, 60, 60, 0.45);
+  border-color: rgba(230, 100, 100, 0.75);
+}
+
+.dpad-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-down {
+  grid-column: 2;
+  grid-row: 3;
 }
 
 .pad-btn {
-  width: 64px;
-  height: 64px;
+  width: 58px;
+  height: 58px;
   border: 2px solid rgba(240, 193, 75, 0.65);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(20, 28, 51, 0.72);
   color: var(--gold);
   font-family: inherit;
-  font-size: 10px;
+  font-size: 14px;
   line-height: 1.2;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
   user-select: none;
   touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pad-btn.action {

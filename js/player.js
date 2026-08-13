@@ -126,16 +126,6 @@ export class Player {
 
     if (this.invuln > 0) this.invuln -= 1;
 
-    this.holdStill = input.down();
-    if (!this.holdStill) {
-      if (this.facing === 1 && input.left() && !input.right()) this.facing = -1;
-      else if (this.facing === -1 && input.right() && !input.left()) this.facing = 1;
-    }
-    const pressForward =
-      (this.facing === 1 && input.right()) ||
-      (this.facing === -1 && input.left());
-    const wantRun = !this.holdStill && (pressForward || input.run());
-
     if (this.attack) {
       this.attack.timer -= 1;
       if (this.attack.timer <= 0) this.attack = null;
@@ -146,6 +136,21 @@ export class Player {
       else if (input.kick()) this.startAttack("kick");
     }
 
+    // Beim Boxen/Schwert stehen bleiben
+    const boxing =
+      !!this.attack &&
+      (this.attack.type === "punch" || this.attack.type === "sword");
+    this.holdStill = input.down() || boxing;
+
+    if (!this.holdStill) {
+      if (this.facing === 1 && input.left() && !input.right()) this.facing = -1;
+      else if (this.facing === -1 && input.right() && !input.left()) this.facing = 1;
+    }
+    const pressForward =
+      (this.facing === 1 && input.right()) ||
+      (this.facing === -1 && input.left());
+    const wantRun = !this.holdStill && (pressForward || input.run());
+
     const walk = WALK_SPEED * this.speedMul;
     const run = RUN_SPEED * this.speedMul;
     const speed = (wantRun ? run : walk) * (opts.bossSlow ? 0.62 : 1);
@@ -153,9 +158,8 @@ export class Player {
 
     if (this.onGround) {
       this.coyote = 6;
-      if (this.holdStill) {
-        this.vx *= 0.55;
-        if (Math.abs(this.vx) < 0.15) this.vx = 0;
+      if (this.holdStill || boxing) {
+        this.vx = 0;
         if (!this.attack) this.anim = "idle";
         this.wasRunning = false;
       } else {
@@ -165,7 +169,10 @@ export class Player {
       }
     } else {
       if (this.coyote > 0) this.coyote -= 1;
-      if (!this.holdStill) {
+      if (boxing) {
+        this.vx *= 0.4;
+        if (Math.abs(this.vx) < 0.2) this.vx = 0;
+      } else if (!this.holdStill) {
         const airSpeed = (wantRun || this.wasRunning ? run : walk) * (opts.bossSlow ? 0.62 : 1);
         const target = this.facing * airSpeed;
         this.vx += Math.sign(target - this.vx) * AIR_CONTROL;
@@ -174,7 +181,7 @@ export class Player {
       if (!this.attack) this.anim = this.vy < 0 ? "jump" : "fall";
     }
 
-    if (canJump && input.jump()) {
+    if (canJump && input.jump() && !boxing) {
       const runJump = this.wasRunning || wantRun;
       this.vy = (runJump ? RUN_JUMP : WALK_JUMP) * (opts.bossSlow ? 0.92 : 1);
       if (runJump) {

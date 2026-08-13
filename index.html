@@ -58,13 +58,15 @@
 
         <div id="touch-pad" class="touch-pad" aria-hidden="false">
           <div class="touch-cluster left">
-            <button type="button" class="pad-btn" data-action="left" data-mode="hold" title="Umdrehen">◀</button>
-            <div class="touch-mid">
-              <button type="button" class="pad-btn flight-only" data-action="up" data-mode="hold">HOCH</button>
-              <button type="button" class="pad-btn" data-action="down" data-mode="hold">STOP</button>
-              <button type="button" class="pad-btn flight-only" data-action="sink" data-mode="hold">RUNTER</button>
+            <div class="dpad" aria-label="Steuerkreuz">
+              <button type="button" class="pad-btn dpad-up run-only" data-action="jump" data-mode="tap" title="Jump">▲</button>
+              <button type="button" class="pad-btn dpad-up flight-only" data-action="up" data-mode="hold" title="Hoch">▲</button>
+              <button type="button" class="pad-btn dpad-left" data-action="left" data-mode="hold" title="Links / Umdrehen">◀</button>
+              <button type="button" class="pad-btn dpad-stop" data-action="down" data-mode="hold" title="Stop">STOP</button>
+              <button type="button" class="pad-btn dpad-right forward" data-action="right" data-mode="hold" title="Vor / Boost">▶</button>
+              <button type="button" class="pad-btn dpad-down flight-only" data-action="sink" data-mode="hold" title="Runter">▼</button>
+              <div class="dpad-down dpad-spacer run-only" aria-hidden="true"></div>
             </div>
-            <button type="button" class="pad-btn forward" data-action="right" data-mode="hold" title="Vorwärts / Boost">VOR</button>
           </div>
           <div class="touch-cluster right">
             <button type="button" class="pad-btn action run-only" data-action="kick" data-mode="tap">TRITT</button>
@@ -79,7 +81,7 @@
       </div>
 
       <aside class="controls desktop-only">
-        <div><strong>Stufe 1:</strong> → rennen · ← umdrehen · ↓ STOP · Space Jump · J/K Kampf</div>
+        <div><strong>Stufe 1:</strong> Kreuz ◀ STOP ▶ · ▲ Jump · Faust = stehen · J/K Kampf</div>
         <div><strong>Stufe 2 Flug:</strong> ↑/↓ Höhe · → Boost · C STOP · J/Space Schuss</div>
         <div><kbd>R</kbd> Neustart · FULL-Icon = Vollbild</div>
       </aside>
