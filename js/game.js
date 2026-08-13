@@ -53,11 +53,8 @@ export class Game {
   }
 
   stage2Unlocked() {
-    try {
-      return localStorage.getItem(LS_STAGE2) === "1";
-    } catch (_) {
-      return false;
-    }
+    // Beide Stufen immer wählbar (iPad/PWA ohne Query-Param)
+    return true;
   }
 
   unlockStage2() {
@@ -75,7 +72,6 @@ export class Game {
         e.preventDefault();
         e.stopPropagation();
         const s = Number(btn.dataset.stage) || 1;
-        if (s === 2 && !this.stage2Unlocked()) return;
         this.pendingStage = s;
         if (this.state === "title" || this.state === "campaign" || this.state === "stageclear") {
           this.startStage(s);
@@ -98,10 +94,9 @@ export class Game {
   }
 
   _refreshTitleUi() {
-    const unlocked = this.stage2Unlocked();
-    document.body.classList.toggle("stage2-unlocked", unlocked);
+    document.body.classList.add("stage2-unlocked");
     const b2 = document.getElementById("btn-stage2");
-    if (b2) b2.hidden = !unlocked;
+    if (b2) b2.hidden = false;
     document.body.classList.toggle("mode-flight", this.mode === "flight");
     document.body.classList.toggle("mode-run", this.mode !== "flight");
     document.querySelectorAll("[data-diff]").forEach((btn) => {

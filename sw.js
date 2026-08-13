@@ -1,4 +1,4 @@
-const CACHE = "heman-v12";
+const CACHE = "heman-v13";
 const ASSETS = [
   "./",
   "./index.html",
