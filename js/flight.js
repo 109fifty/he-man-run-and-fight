@@ -31,7 +31,9 @@ export class FlightSim {
 
   _spawnAhead(shipX) {
     const p = this.profile;
-    const baseX = shipX + 700 + Math.random() * 200;
+    const baseX = shipX + 650 + Math.random() * 220;
+    const dmg = (kind, fallback) => (p.dmg && p.dmg[kind]) || fallback;
+    const pull = p.pull != null ? p.pull : 0.35;
 
     const roll = (rate) => Math.random() < (rate || 0);
 
@@ -42,9 +44,9 @@ export class FlightSim {
         y: this.level.corridor.top - 20,
         w: 22,
         h: 22,
-        vx: -1.5 - Math.random(),
-        vy: 3.2 + Math.random() * 2.5,
-        damage: 2,
+        vx: -2.2 - Math.random() * 1.5,
+        vy: 3.5 + Math.random() * 3,
+        damage: dmg("meteor", 2),
         rot: Math.random() * 6,
       });
     }
@@ -55,9 +57,9 @@ export class FlightSim {
         y: this._randY(),
         w: 20,
         h: 20,
-        vx: -2.5 - Math.random(),
+        vx: -3.2 - Math.random() * 1.5,
         vy: Math.sin(this.timer * 0.05) * 0.5,
-        damage: 2,
+        damage: dmg("lavaBall", 2),
         bob: Math.random() * 10,
       });
     }
@@ -66,41 +68,48 @@ export class FlightSim {
         kind: "whirl",
         x: baseX,
         y: this._randY(),
-        w: 48,
-        h: 48,
-        vx: -1.2,
+        w: 52,
+        h: 52,
+        vx: -1.8 - Math.random(),
         vy: 0,
-        damage: 1,
-        pull: 0.35,
+        damage: dmg("whirl", 1),
+        pull,
         spin: 0,
       });
     }
     if (roll(p.lightning)) {
-      const y = this._randY();
-      this.hazards.push({
-        kind: "lightning",
-        x: baseX,
-        y,
-        w: 14,
-        h: 90,
-        vx: -4,
-        vy: 0,
-        damage: 2,
-        life: 40 + Math.floor(Math.random() * 30),
-        flash: 0,
-      });
+      // oft 1–3 Blitze als Kette
+      const n = 1 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < n; i++) {
+        this.hazards.push({
+          kind: "lightning",
+          x: baseX + i * 55,
+          y: this._randY(),
+          w: 14,
+          h: 100,
+          vx: -4.5 - Math.random(),
+          vy: 0,
+          damage: dmg("lightning", 3),
+          life: 45 + Math.floor(Math.random() * 35),
+          flash: 0,
+        });
+      }
     }
     if (roll(p.ice)) {
-      this.hazards.push({
-        kind: "ice",
-        x: baseX,
-        y: this._randY(),
-        w: 18,
-        h: 14,
-        vx: -5,
-        vy: (Math.random() - 0.5) * 1.5,
-        damage: 1,
-      });
+      // Eissturm: mehrere Splitter
+      const n = 2 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < n; i++) {
+        this.hazards.push({
+          kind: "ice",
+          x: baseX + i * 28,
+          y: this._randY(),
+          w: 18,
+          h: 14,
+          vx: -5.5 - Math.random() * 2,
+          vy: (Math.random() - 0.5) * 2.5,
+          damage: dmg("ice", 1),
+        });
+      }
     }
     if (roll(p.acid)) {
       this.hazards.push({
@@ -111,7 +120,7 @@ export class FlightSim {
         h: 28,
         vx: -2,
         vy: Math.sin(this.timer * 0.08) * 0.8,
-        damage: 2,
+        damage: dmg("acid", 2),
       });
     }
     if (roll(p.scrap)) {
@@ -123,24 +132,29 @@ export class FlightSim {
         h: 12 + Math.random() * 16,
         vx: -3 - Math.random() * 2,
         vy: (Math.random() - 0.5) * 2,
-        damage: 1,
+        damage: dmg("scrap", 1),
         rot: Math.random() * 6,
       });
     }
     if (roll(p.enemyCraft)) {
+      const hp = p.craftHp || 2;
       this.crafts.push({
         x: baseX + 40,
         y: this._randY(),
         w: 44,
         h: 22,
-        vx: -2.2 - Math.random(),
+        vx: -2.8 - Math.random() * 1.4,
         vy: 0,
-        hp: p.craftHp || 2,
-        maxHp: p.craftHp || 2,
-        shootCd: 40 + Math.floor(Math.random() * 50),
+        hp,
+        maxHp: hp,
+        shootCd: (p.craftShootMin || 40) + Math.floor(Math.random() * ((p.craftShootMax || 90) - (p.craftShootMin || 40))),
+        shootMin: p.craftShootMin || 40,
+        shootMax: p.craftShootMax || 90,
+        bulletDmg: p.craftBulletDmg || 1,
         alive: true,
         kind: p.craftKind || "drone",
         anim: 0,
+        aggro: true,
       });
     }
   }
@@ -209,19 +223,34 @@ export class FlightSim {
       if (c.y > bot) c.y = bot;
 
       c.shootCd -= 1;
-      if (c.shootCd <= 0 && c.x - ship.x < 520) {
-        c.shootCd = 55 + Math.floor(Math.random() * 40);
-        this.bullets.push({
-          x: c.x - 8,
-          y: c.y + c.h / 2 - 3,
-          w: 12,
-          h: 5,
-          vx: -7,
-          vy: (ship.y - c.y) * 0.02,
-          damage: 1,
-          life: 80,
-          from: "enemy",
-        });
+      if (c.shootCd <= 0 && c.x - ship.x < 560) {
+        const smin = c.shootMin || 40;
+        const smax = c.shootMax || 90;
+        c.shootCd = smin + Math.floor(Math.random() * Math.max(1, smax - smin));
+        const dmg = c.bulletDmg || 1;
+        // Gegenwehr: oft Doppel-/Streuschuss
+        const pattern = c.aggro ? Math.floor(Math.random() * 3) : 0;
+        const mk = (vy = 0) =>
+          this.bullets.push({
+            x: c.x - 8,
+            y: c.y + c.h / 2 - 3,
+            w: 12,
+            h: 5,
+            vx: -7.5 - Math.random(),
+            vy: vy + (ship.y - c.y) * 0.025,
+            damage: dmg,
+            life: 85,
+            from: "enemy",
+          });
+        if (pattern === 0) mk(0);
+        else if (pattern === 1) {
+          mk(-1.2);
+          mk(1.2);
+        } else {
+          mk(-2);
+          mk(0);
+          mk(2);
+        }
       }
     }
     this.crafts = this.crafts.filter((c) => c.alive && c.x > ship.x - 150);

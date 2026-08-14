@@ -11,6 +11,7 @@ export class Input {
       run: false,
       jump: false,
       punch: false,
+      fire: false,
       kick: false,
       start: false,
       restart: false,
@@ -185,9 +186,19 @@ export class Input {
     return this.tap("KeyJ") || this.tap("KeyX") || this.touch.punch;
   }
 
-  /** Flug: Schuss (auch gehaltenes J / Touch FAUST als Tap) */
+  /** Flug: Dauerschuss bei gehaltener Taste */
+  fireHeld() {
+    return (
+      this.pressed("KeyJ") ||
+      this.pressed("KeyX") ||
+      this.touch.fire ||
+      this.touch.punch
+    );
+  }
+
+  /** Flug: Schuss-Tap (Fallback) */
   shoot() {
-    return this.tap("Space") || this.touch.punch;
+    return this.tap("Space") || this.touch.punch || this.touch.fire;
   }
 
   kick() {

@@ -35,6 +35,7 @@ export class Ship {
     this.animTimer = 0;
     this.alive = true;
     this.boosting = false;
+    this.burst = 0;
   }
 
   applyDifficulty(diff) {
@@ -104,19 +105,31 @@ export class Ship {
     if (this.y < top) this.y = top;
     if (this.y > bot) this.y = bot;
 
-    if ((input.punch() || input.shoot()) && this.shootCd <= 0) {
-      this.shootCd = Math.max(8, Math.round(12 / Math.min(1.3, this.speedMul)));
-      flight.bullets.push({
+    if ((input.fireHeld?.() || input.punch() || input.shoot()) && this.shootCd <= 0) {
+      this.shootCd = Math.max(6, Math.round(9 / Math.min(1.35, this.speedMul)));
+      this.burst = (this.burst || 0) + 1;
+      const pattern = this.burst % 3; // 0 Einzel · 1 Doppel · 2 Streu
+      const base = {
         x: this.x + this.w - 4,
         y: this.y + this.h / 2 - 3,
         w: 16,
         h: 6,
         vx: 11 * Math.min(1.25, this.speedMul),
-        vy: 0,
         damage: 1,
         life: 70,
         from: "player",
-      });
+      };
+      const push = (vy = 0, ox = 0, oy = 0) =>
+        flight.bullets.push({ ...base, x: base.x + ox, y: base.y + oy, vy });
+      if (pattern === 0) push(0);
+      else if (pattern === 1) {
+        push(-0.8, 0, -5);
+        push(0.8, 0, 5);
+      } else {
+        push(-1.6, 0, -8);
+        push(0);
+        push(1.6, 0, 8);
+      }
     }
   }
 }
