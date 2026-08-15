@@ -46,15 +46,15 @@ git add -A
 git -c user.email="${OWNER}@users.noreply.github.com" -c user.name="${OWNER}" \
   commit -m "Redirect root Pages to canonical He-Man game URL." >/dev/null
 
-if gh repo view "${REPO}" >/dev/null 2>&1; then
-  git remote add origin "https://github.com/${REPO}.git"
+if gh repo view "${OWNER}/${REPO}" >/dev/null 2>&1; then
+  git remote add origin "https://github.com/${OWNER}/${REPO}.git"
   git push -u origin main --force
 else
-  gh repo create "${REPO}" --public --source=. --remote=origin --push \
+  gh repo create "${OWNER}/${REPO}" --public --source=. --remote=origin --push \
     --description "Redirect to He-Man Run & Fight"
 fi
 
-gh api -X PUT "repos/${REPO}/pages" --input - <<EOF >/dev/null 2>&1 || true
+gh api -X PUT "repos/${OWNER}/${REPO}/pages" --input - <<EOF >/dev/null 2>&1 || true
 {
   "build_type": "legacy",
   "source": { "branch": "main", "path": "/" }
