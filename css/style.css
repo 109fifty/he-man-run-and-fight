@@ -248,7 +248,10 @@ body.overlay-open .fs-enter {
 }
 
 body.mode-run .run-only {
-  display: unset;
+  /* flex, not unset: unset→inline drops width/height on FAUST/TRITT/JUMP */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.mode-flight .run-only {

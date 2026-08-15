@@ -1,4 +1,4 @@
-const CACHE = "heman-v17";
+const CACHE = "heman-v18";
 const ASSETS = [
   "./",
   "./index.html",
@@ -62,7 +62,12 @@ self.addEventListener("fetch", (event) => {
           return res;
         })
         .catch(() =>
-          caches.match(req, { ignoreSearch: true }).then((cached) => cached || caches.match("./index.html"))
+          caches.match(req, { ignoreSearch: true }).then((cached) => {
+            if (cached) return cached;
+            // Never serve HTML for .js/.css — that crashes module parse
+            if (isNav) return caches.match("./index.html");
+            return Response.error();
+          })
         )
     );
     return;

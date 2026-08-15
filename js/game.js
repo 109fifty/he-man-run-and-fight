@@ -110,6 +110,7 @@ export class Game {
   }
 
   setMode(mode) {
+    if (this.mode !== mode) this.input.releaseAll();
     this.mode = mode;
     this._refreshTitleUi();
   }
@@ -163,6 +164,8 @@ export class Game {
   enterArena() {
     const arena = this.level.arena;
     if (!arena) return;
+    // Drop flight holds before SCHUSS/▲/▼ hide (lost pointerup → stuck fire/climb)
+    this.input.releaseAll();
     const hearts = this.ship ? this.ship.hearts : this.player.hearts;
     const sword = this.ship ? this.ship.hasSword : this.player.hasSword;
     if (!hearts || hearts <= 0) {
@@ -256,6 +259,7 @@ export class Game {
       return;
     }
     if (this.state === "levelclear") {
+      this.input.endFrame();
       const next = this.levelId + 1;
       const actor = this.mode === "flight" ? this.ship : this.player;
       this.carry = {
@@ -269,11 +273,13 @@ export class Game {
       return;
     }
     if (this.state === "stageclear") {
+      this.input.endFrame();
       this.unlockStage2();
       await this.startStage(2);
       return;
     }
     if (this.state === "campaign") {
+      this.input.endFrame();
       this.pendingStage = 1;
       await this.startStage(1);
     }
@@ -304,6 +310,8 @@ export class Game {
   }
 
   clearLevel() {
+    // Space is jump+start: clear edge so multi-step frames don't auto-advance
+    this.input.endFrame();
     const max = this.stage === 2 ? STAGE2_LEVELS : LEVELS_PER_STAGE;
     if (this.levelId >= max) {
       if (this.stage === 1) {
@@ -334,6 +342,8 @@ export class Game {
 
   updateFlight() {
     const { ship, flight, level } = this;
+    if (!ship || !flight) return;
+
     if (ship.alive) {
       ship.update(this.input, flight);
       flight.update(ship);

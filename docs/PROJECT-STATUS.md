@@ -11,7 +11,7 @@ Stand: 2026-08-15 · Branch `main` · Live OK
 | GitHub Repo | https://github.com/109fifty/he-man-run-and-fight |
 | Root-Redirect-Repo | https://github.com/109fifty/109fifty.github.io |
 
-PWA-Cache aktuell: `heman-v17` (`sw.js`)
+PWA-Cache aktuell: `heman-v18` (`sw.js`)
 
 ## Was das Spiel umfasst
 
