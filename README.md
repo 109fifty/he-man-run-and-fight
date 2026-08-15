@@ -4,6 +4,8 @@ Jump-and-Run-Prototyp im Stil von Super Mario (NES), mit **He-Man** als Hero.
 **Stufe 1:** 12 Run-&-Fight-Level · **Stufe 2:** 12 Flug-Level im Raumluftfahrzeug (nach Freischaltung).  
 Installierbar auf dem **iPad** als Home-Bildschirm-App (PWA).
 
+**Projektstatus / Handoff:** **[docs/PROJECT-STATUS.md](./docs/PROJECT-STATUS.md)**
+
 ## Schnellstart (Mac/PC)
 
 ```bash
