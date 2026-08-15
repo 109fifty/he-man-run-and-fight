@@ -152,19 +152,18 @@ Voraussetzung: [GitHub CLI](https://cli.github.com/) + `gh auth login`
 
 ```bash
 cd "/Users/hans/Documents/GitHub/medismile-website/He-man run and fight"
-chmod +x scripts/setup-github-pages.sh
+chmod +x scripts/setup-github-pages.sh scripts/publish-root-redirect.sh
 ./scripts/setup-github-pages.sh
 ```
 
-Das Skript erstellt/pusht das Repo und aktiviert Pages über GitHub Actions  
-(Workflow: `.github/workflows/deploy-pages.yml`).
+Das Skript pusht `main` und aktiviert GitHub Pages als **Deploy from branch** (`main` / `/`).  
+Kurz-URL `https://109fifty.github.io/` leitet auf die Ziel-URL um.
 
-Manuell geht es auch: siehe `docs/VARIANT-B.md` → „Option 2“.
+Manuell: siehe `docs/VARIANT-B.md`.
 
 ### B2 — Auf dem iPad installieren
 
-1. Warte, bis der Action-Lauf **Deploy GitHub Pages** grün ist  
-   (`https://github.com/109fifty/he-man-run-and-fight/actions`).
+1. 1–2 Minuten auf den Pages-Build warten.
 2. Safari → `https://109fifty.github.io/he-man-run-and-fight/`
 3. **Teilen → Zum Home-Bildschirm → Hinzufügen**
 4. Icon **He-Man** starten

@@ -1,7 +1,7 @@
 {
   "name": "He-Man Run & Fight",
   "short_name": "He-Man",
-  "description": "Jump-and-Run mit He-Man — Level 1 von 12",
+  "description": "He-Man Run & Fight — Stufe 1 Jump & Run, Stufe 2 Flugkampf",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

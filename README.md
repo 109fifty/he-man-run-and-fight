@@ -16,22 +16,23 @@ Browser: [http://localhost:8080](http://localhost:8080)
 
 - Gesamtplan: **[IPAD-INSTALL.md](./IPAD-INSTALL.md)**
 - **Variante B (GitHub Pages, dauerhaft):** **[docs/VARIANT-B.md](./docs/VARIANT-B.md)**
+- **Optional Vercel:** **[docs/VERCEL.md](./docs/VERCEL.md)**
 
 ```bash
 # Lokal-Paket (Variante A)
 ./scripts/pack-ipad.sh
 
-# Dauerhaftes HTTPS-Hosting (Variante B)
+# Dauerhaftes HTTPS-Hosting (Variante B — Pages from branch main)
 ./scripts/setup-github-pages.sh
 ```
 
-Nach Variante B (wenn deployed):
+**Offizielle URL:**
 
 ```text
 https://109fifty.github.io/he-man-run-and-fight/
 ```
 
-Safari → Teilen → Zum Home-Bildschirm.
+(`https://109fifty.github.io/` leitet dorthin um.)
 
 ## Steuerung
 

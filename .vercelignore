@@ -1,0 +1,8 @@
+dist/
+.git/
+.github/
+scripts/
+docs/
+*.md
+.DS_Store
+.cursor/

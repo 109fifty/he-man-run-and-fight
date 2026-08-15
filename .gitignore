@@ -6,4 +6,6 @@ _site/
 dist/**/* [0-9].*
 dist/**/* [0-9].*/**
 dist/he-man-ipad/
+.vercel/
+# Legacy Pages: kein Actions-Workflow nötig
 .github/workflows/
